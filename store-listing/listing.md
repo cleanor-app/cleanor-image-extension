@@ -14,8 +14,9 @@ Everything below is ready to paste into the Chrome Web Store Developer Dashboard
 Optimize images without uploading them anywhere. Cleanor Image Optimizer compresses your pictures and converts them between modern formats entirely inside your browser — no account, no servers, no tracking.
 
 WHAT IT DOES
-• Compress JPEG and WebP with a quality slider, or re-save PNG losslessly.
-• Convert formats: drop PNG, JPEG, WebP, AVIF, GIF or BMP, and export WebP, JPEG or PNG.
+• Compress JPEG, WebP and AVIF with a quality slider, or re-save PNG losslessly.
+• Convert formats: drop PNG, JPEG, WebP, AVIF, GIF or BMP, and export WebP, AVIF, JPEG or PNG.
+• Right-click any image on a page and choose "Optimize image with Cleanor".
 • Batch process: add many images at once (drag & drop, file picker, or paste) and see per-image and total savings.
 • Optional max-width resize.
 
@@ -32,9 +33,10 @@ This extension has a single purpose: to compress and convert image files locally
 
 ## Permissions justification
 
-- **Permissions requested:** none.
-- **Host permissions:** none.
-- The extension does not access web pages, tabs, browsing data, cookies, or the network. All work happens in the extension's own popup using the Canvas API. No justification for sensitive permissions is needed because none are requested.
+- **`contextMenus`** — adds one right-click entry, "Optimize image with Cleanor", on images so the user can send an image straight to the optimizer. Not a sensitive permission.
+- **`optional_host_permissions: <all_urls>`** — NOT granted at install. Only when the user clicks the context-menu entry and then confirms "Load image" does the extension request access to that **single site's** origin, solely to download that one image's bytes so it can be re-encoded locally. The user can decline; drag-and-drop needs no permission at all.
+- **WebAssembly (`wasm-unsafe-eval` in CSP)** — used only to encode AVIF, which the browser's Canvas cannot do natively. The WASM codec ships inside the extension; it makes no network calls.
+- No tabs, cookies, browsing data, history, or analytics are accessed. All image processing happens on-device.
 
 ## Data usage disclosures (Privacy tab)
 

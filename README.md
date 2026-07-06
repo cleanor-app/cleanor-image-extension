@@ -10,11 +10,12 @@
 
 ## Features
 
-- **Compress** JPEG / WebP with a quality slider, or re-save PNG losslessly.
-- **Convert formats** — PNG, JPEG, WebP, AVIF, GIF and BMP go **in**; WebP, JPEG or PNG come **out**.
+- **Compress** JPEG / WebP / AVIF with a quality slider, or re-save PNG losslessly.
+- **Convert formats** — PNG, JPEG, WebP, AVIF, GIF and BMP go **in**; WebP, AVIF, JPEG or PNG come **out**.
+- **Right-click any image** on a page → "Optimize image with Cleanor".
 - **Batch** — drop, pick or paste many images at once; see per-image and total savings.
 - **Resize** — optional max-width cap.
-- **100% local** — uses the browser's own Canvas encoder. No servers, no permissions, no data collection.
+- **100% local** — WebP/JPEG/PNG use the browser's own Canvas encoder; AVIF uses a bundled WASM codec ([@jsquash/avif](https://github.com/jamsinclair/jSquash)). Nothing is ever uploaded.
 
 ## Install
 
@@ -28,7 +29,14 @@
 
 ## How it works
 
-The popup decodes each image with `createImageBitmap()`, draws it to a `<canvas>` (flattening onto white for JPEG), and re-encodes with `canvas.toBlob(type, quality)`. Files are read from a drag/drop, file picker, or clipboard paste and never leave the page. There is no background network activity — the extension declares **no permissions and no host access** (see `manifest.json`).
+The popup decodes each image with `createImageBitmap()`, draws it to a `<canvas>` (flattening onto white for JPEG), and re-encodes with `canvas.toBlob(type, quality)`. AVIF output — which Canvas cannot produce — is encoded by a vendored single-thread WASM codec loaded on demand (`vendor/avif/`). Files come from drag/drop, the file picker, or clipboard paste and never leave the page.
+
+### Permissions
+
+- `contextMenus` — the one right-click menu entry on images.
+- `optional_host_permissions: <all_urls>` — **not granted at install.** Only when you use the right-click entry and confirm "Load image" does it ask for access to that **one site**, to fetch that single image. Drag-and-drop needs no permission.
+- `wasm-unsafe-eval` (CSP) — to run the AVIF encoder locally. No network access.
+- No tabs, cookies, history, analytics, or data collection.
 
 ## Privacy
 

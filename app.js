@@ -12,7 +12,17 @@ const els = {
   rowTpl: $('rowTpl'),
 };
 
-const EXT = { 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' };
+const EXT = { 'image/webp': 'webp', 'image/avif': 'avif', 'image/jpeg': 'jpg', 'image/png': 'png' };
+
+// Lazily loaded AVIF (WASM) encoder — only fetched when the user picks AVIF.
+let _avifEncode;
+async function getAvifEncoder() {
+  if (!_avifEncode) {
+    const mod = await import('./vendor/avif/avif-encode.js');
+    _avifEncode = mod.encodeAvif;
+  }
+  return _avifEncode;
+}
 
 /** @type {{file:File, name:string, base:string, origSize:number, blob?:Blob, outName?:string, outUrl?:string, thumbUrl?:string, error?:string}[]} */
 let items = [];
@@ -57,6 +67,14 @@ async function encodeOne(file) {
   }
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close?.();
+
+  if (type === 'image/avif') {
+    // Chrome's canvas cannot encode AVIF; use the vendored WASM encoder.
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const encodeAvif = await getAvifEncoder();
+    const buf = await encodeAvif(imageData, { quality: Number(els.quality.value) });
+    return new Blob([buf], { type: 'image/avif' });
+  }
 
   const useQuality = type === 'image/png' ? undefined : q;
   return canvasToBlob(canvas, type, useQuality);
@@ -216,5 +234,53 @@ if (new URLSearchParams(location.search).has('tab')) {
   document.body.classList.add('tab');
   els.expand.style.display = 'none';
 }
+
+// ---- context-menu entry point (?src=<imageUrl>) -----------------------------
+function fileNameFromUrl(url) {
+  try {
+    if (url.startsWith('data:')) return 'image.png';
+    const p = new URL(url).pathname;
+    return decodeURIComponent(p.substring(p.lastIndexOf('/') + 1)) || 'image';
+  } catch { return 'image'; }
+}
+
+// Request host access for one origin. Called directly inside a click handler so the
+// user gesture is preserved (no awaits before request). Already-granted → resolves true.
+async function ensureHostPermission(url) {
+  if (typeof chrome === 'undefined' || !chrome.permissions) return;
+  if (url.startsWith('data:')) return;
+  let origin;
+  try { origin = new URL(url).origin + '/*'; } catch { return; }
+  const granted = await chrome.permissions.request({ origins: [origin] });
+  if (!granted) throw new Error('permission denied');
+}
+
+(function initIncoming() {
+  const src = new URLSearchParams(location.search).get('src');
+  const incoming = $('incoming');
+  if (!src || !incoming) return;
+  let host = src;
+  try { host = new URL(src).host || 'this page'; } catch {}
+  $('incomingText').textContent = `Optimize an image from ${host}?`;
+  incoming.hidden = false;
+  $('dismissIncoming').addEventListener('click', () => { incoming.hidden = true; });
+  $('loadIncoming').addEventListener('click', async () => {
+    const btn = $('loadIncoming');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    try {
+      await ensureHostPermission(src);
+      const resp = await fetch(src);
+      if (!resp.ok) throw new Error('fetch failed');
+      const blob = await resp.blob();
+      incoming.hidden = true;
+      addFiles([new File([blob], fileNameFromUrl(src), { type: blob.type || 'image/png' })]);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Load image';
+      $('incomingText').textContent = 'Could not load that image (site blocked it or permission denied). Try drag & drop instead.';
+    }
+  });
+})();
 
 syncControls();
