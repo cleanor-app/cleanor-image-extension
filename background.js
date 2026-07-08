@@ -62,22 +62,36 @@ function collectImagesInPage() {
   return [...urls];
 }
 function prepareFullPage() {
-  const de = document.documentElement, body = document.body;
-  const totalHeight = Math.max(de.scrollHeight, body ? body.scrollHeight : 0, de.offsetHeight);
+  const de = document.documentElement;
   const prev = { x: window.scrollX, y: window.scrollY };
-  // Force instant scrolling for the whole capture (beats CSS `scroll-behavior:smooth`,
-  // which would make window.scrollTo animate and report a stale scrollY).
+  // Force instant scrolling (beats CSS `scroll-behavior:smooth`, which animates and
+  // makes the scroll position read stale).
   const style = document.createElement('style');
   style.setAttribute('data-cleanor', '');
   style.textContent = '*{scroll-behavior:auto !important}';
   de.appendChild(style);
+  // Find what actually scrolls: the document, or (for SPA layouts like LinkedIn) the
+  // tallest inner overflow:scroll/auto element that fills most of the viewport.
+  let scroller = 'window';
+  const docEl = document.scrollingElement || de;
+  if (docEl.scrollHeight <= docEl.clientHeight + 4) {
+    let best = null, bestH = 0;
+    document.querySelectorAll('*').forEach((el) => {
+      const s = getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 50 && el.clientHeight > window.innerHeight * 0.4) {
+        if (el.scrollHeight > bestH) { bestH = el.scrollHeight; best = el; }
+      }
+    });
+    if (best) scroller = best;
+  }
+  window.__cleanorScroller = scroller;
   const hidden = [];
   document.querySelectorAll('*').forEach((el) => {
     const s = getComputedStyle(el);
     if ((s.position === 'fixed' || s.position === 'sticky') && el.offsetHeight > 0) { hidden.push([el, el.style.visibility]); el.style.visibility = 'hidden'; }
   });
-  window.__cleanorRestore = () => { hidden.forEach(([el, v]) => { el.style.visibility = v; }); style.remove(); window.scrollTo(prev.x, prev.y); };
-  return { totalHeight, viewportHeight: window.innerHeight, viewportWidth: window.innerWidth, dpr: window.devicePixelRatio || 1 };
+  window.__cleanorRestore = () => { hidden.forEach(([el, v]) => { el.style.visibility = v; }); style.remove(); if (scroller !== 'window') try { scroller.scrollTop = 0; } catch {} window.scrollTo(prev.x, prev.y); };
+  return { viewportHeight: window.innerHeight, viewportWidth: window.innerWidth, dpr: window.devicePixelRatio || 1 };
 }
 function selectRegionInPage() {
   return new Promise((resolve) => {
@@ -231,7 +245,7 @@ async function downloadAllOnPage(tabId, pageUrl) {
     files.push({ name: uniqueName(used, safeName(u, files.length)), data: new Uint8Array(await r.arrayBuffer()) });
   });
   const total = files.reduce((a, f) => a + f.data.length, 0);
-  if (files.length && total <= 45 * 1024 * 1024) { await downloadZip(files, `${hostOf(pageUrl)}-images-${files.length}-cleanor.app.zip`); return; }
+  if (files.length && total <= 45 * 1024 * 1024) { await downloadZip(files, `${hostOf(pageUrl)}-images-${files.length}-cleanor.zip`); return; }
   let n = 0; // fallback: nothing reachable, or archive too large → per-URL downloads
   for (const u of urls) { try { chrome.downloads.download({ url: u, filename: 'Cleanor/' + safeName(u, n), saveAs: false }); n++; } catch {} }
   flashBadge(n);
@@ -255,7 +269,7 @@ async function convertAllOnPage(tabId, pageUrl) {
     const base = (safeName(u, files.length).replace(/\.[^.]+$/, '') || 'image');
     files.push({ name: uniqueName(used, `${base}-cleanor.app.${ext}`), data: new Uint8Array(await blob.arrayBuffer()) });
   }, 4);
-  if (files.length) { await downloadZip(files, `${hostOf(pageUrl)}-converted-${files.length}-cleanor.app.zip`); return; }
+  if (files.length) { await downloadZip(files, `${hostOf(pageUrl)}-converted-${files.length}-cleanor.zip`); return; }
   await startJob({ type: 'convert-all', urls }); // nothing fetchable → optimizer page (asks for access)
 }
 
@@ -287,30 +301,48 @@ async function captureVisible(tab, pageUrl) {
   const dataUrl = await captureTab(tab.windowId); // already a PNG data URL
   await downloadShot(dataUrl, 'visible', 'png', pageUrl);
 }
+const exec = (tabId, func, args) => chrome.scripting.executeScript(args ? { target: { tabId }, func, args } : { target: { tabId }, func });
+function readScrollPos() {
+  const s = window.__cleanorScroller;
+  if (s && s !== 'window') return { y: Math.round(s.scrollTop), max: Math.round(s.scrollHeight - s.clientHeight) };
+  const de = document.scrollingElement || document.documentElement;
+  return { y: Math.round(window.scrollY), max: Math.round(de.scrollHeight - window.innerHeight) };
+}
+function scrollTo1(yy) {
+  const s = window.__cleanorScroller;
+  if (s && s !== 'window') s.scrollTop = yy; else window.scrollTo(0, yy);
+}
+// Capture the whole scrollable content, one viewport at a time, re-measuring each step so
+// lazy/infinite pages (LinkedIn etc.) that grow while scrolling are handled. Stitched after.
 async function captureFullPage(tab, pageUrl) {
-  const [{ result: m }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: prepareFullPage });
-  const scale = m.dpr;
-  // Cap total height so the canvas stays within safe limits (device px), for very long pages.
-  const totalHeight = Math.min(m.totalHeight, Math.floor(32000 / scale));
-  const canvas = new OffscreenCanvas(Math.round(m.viewportWidth * scale), Math.round(totalHeight * scale));
-  const ctx = canvas.getContext('2d');
-  let y = 0, guard = 0;
+  const [{ result: m }] = await exec(tab.id, prepareFullPage);
+  const scale = m.dpr, vh = m.viewportHeight, vw = m.viewportWidth;
+  const MAX_SLICES = 20;
+  const slices = [];
+  let last = -1;
   try {
-    while (guard++ < 60) {
-      const [{ result: actualY }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: (yy) => { window.scrollTo(0, yy); return window.scrollY; }, args: [y] });
-      await sleep(240); // let the new viewport paint (and lazy content load)
-      const shot = await captureTab(tab.windowId);
-      const bmp = await createImageBitmap(await (await fetch(shot)).blob());
-      ctx.drawImage(bmp, 0, Math.round(actualY * scale));
-      bmp.close?.();
-      if (actualY + m.viewportHeight >= totalHeight - 1) break;
-      const next = actualY + m.viewportHeight;
-      if (next <= y) break; // reached the bottom / can't scroll further
-      y = next;
-      await sleep(340); // respect captureVisibleTab rate limit (~2/sec)
+    for (let i = 0; i < MAX_SLICES; i++) {
+      const [{ result: pos }] = await exec(tab.id, readScrollPos);
+      await sleep(260); // let the viewport paint
+      slices.push({ y: pos.y, dataUrl: await captureTab(tab.windowId) });
+      if (pos.y >= pos.max - 1) break;      // reached the bottom
+      if (pos.y <= last) break;             // couldn't advance
+      last = pos.y;
+      await exec(tab.id, scrollTo1, [pos.y + vh]);
+      await sleep(450); // let lazy content load & settle
     }
   } finally {
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.__cleanorRestore && window.__cleanorRestore(); } }).catch(() => {});
+    await exec(tab.id, () => { window.__cleanorRestore && window.__cleanorRestore(); }).catch(() => {});
+  }
+  const firstY = slices.length ? slices[0].y : 0;
+  const maxY = slices.reduce((a, s) => Math.max(a, s.y), 0);
+  const totalCss = Math.min((maxY - firstY) + vh, Math.floor(32000 / scale));
+  const canvas = new OffscreenCanvas(Math.round(vw * scale), Math.round(totalCss * scale));
+  const ctx = canvas.getContext('2d');
+  for (const s of slices) {
+    const bmp = await createImageBitmap(await (await fetch(s.dataUrl)).blob());
+    ctx.drawImage(bmp, 0, Math.round((s.y - firstY) * scale));
+    bmp.close?.();
   }
   const { blob, ext } = await canvasToShot(canvas);
   await downloadShot(await blobToDataUrl(blob), 'full-page', ext, pageUrl);
