@@ -11,25 +11,35 @@ Everything below is ready to paste into the Chrome Web Store Developer Dashboard
 
 ## Detailed description
 
-Optimize images without uploading them anywhere. Cleanor Image Optimizer compresses your pictures and converts them between modern formats entirely inside your browser, no account, no servers, no tracking.
+Compress and convert images without ever uploading them. Cleanor Image Optimizer shrinks your pictures and converts them between modern formats entirely inside your browser — no account, no servers, no tracking. Perfect for faster websites, smaller email attachments, iPhone HEIC photos, and anyone who works with sensitive or client images.
 
-WHAT IT DOES
-• Compress photos with a quality slider, or target an exact file size ("get it under 200 KB").
-• Convert to WebP, AVIF, JPEG, PNG or PDF, and open HEIC (iPhone) and AVIF files to save them as universal formats.
-• Resize (max width, fit within W×H, exact size, or scale %) and crop to an aspect ratio (1:1, 4:3, 16:9, 9:16…).
-• Right-click any image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF" — downloads the converted file instantly, no extra window.
-• Right-click the page for "Cleanor Image Tools ▸ Convert all images / Download all images".
-• Screenshots: capture the visible area, the full scrolling page, or a region you draw — then compress or convert it. No extra permissions, no debugger.
-• Batch process: add many images at once (drag & drop, file picker, or paste) and download them all as a single .zip, or combine into one multi-page PDF.
-• Copy any result straight to your clipboard to paste into a doc or chat.
-• Keyboard shortcut to open the optimizer; remembers your settings between sessions.
+COMPRESS & CONVERT
+• Shrink images up to 90% with a quality slider — or set an exact target like "under 200 KB" and let Cleanor find the best quality automatically.
+• Convert to WebP, AVIF, JPEG, PNG or PDF.
+• Open HEIC (iPhone) and AVIF photos and save them as universal WebP, JPEG or PNG.
+• See exactly how much you saved on every image.
 
-WHY IT'S DIFFERENT
-• 100% on-device. Images are processed with your browser's own encoder (plus bundled WASM codecs) and never leave your computer.
-• Privacy built in. EXIF, GPS and camera metadata are removed automatically on every conversion.
-• No account, no ads, no tracking. Fast and lightweight.
+RESIZE, CROP & BATCH
+• Resize by max width, fit within W×H, exact dimensions, or a percentage — with one-tap presets (4K, 1920, 1280, 800).
+• Crop to an aspect ratio: 1:1, 4:3, 3:2, 16:9 or 9:16.
+• Batch-convert a whole folder at once (drag & drop, file picker, or paste) and download everything as a single .zip — or combine images into one multi-page PDF.
 
-Prefer to work on the web, or need more tools? Visit cleanor.app/tools, the same privacy-first toolkit, in your browser.
+RIGHT-CLICK ANYWHERE
+• Right-click any image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF" — it downloads the converted file instantly, with no extra window.
+• Right-click the page → "Convert all images" or "Download all images" in one go.
+• Copy any result to your clipboard to paste into a doc, email or chat.
+
+BUILT-IN SCREENSHOTS
+• Capture the visible area, the full scrolling page, or a region you draw — then compress or convert the screenshot right away. No screen-recording or debugger permissions.
+
+PRIVATE BY DESIGN
+• 100% on-device. Images are processed by your browser (plus small bundled WASM codecs) and never leave your computer.
+• EXIF, GPS and camera metadata are stripped automatically on every conversion.
+• No account, no ads, no tracking, works offline.
+
+Cleanor asks for no access to your sites at install time. Optional one-time site access is requested only when you use a right-click action, and you can turn on instant saving everywhere from a single checkbox — or never grant it and just drag & drop.
+
+Prefer the web, or need more tools? Visit cleanor.app/tools — the same privacy-first toolkit in your browser.
 
 ## Single-purpose statement (required)
 
@@ -57,7 +67,7 @@ This extension has a single purpose: to compress and convert image files locally
 ## Assets checklist
 
 - [x] Icon 128×128 (`icons/icon-128.png`) — Cleanor blue app icon
-- [x] Screenshots 1280×800 (3): `screenshot-1-hero.png`, `screenshot-2-formats.png`, `screenshot-3-privacy.png`
+- [x] Screenshots 1280×800 (5, brand style): `screenshot-1-hero.png`, `screenshot-2-formats.png`, `screenshot-3-rightclick.png`, `screenshot-4-controls.png`, `screenshot-5-screenshots.png`
 - [x] Small promo tile 440×280 (`store-listing/promo-440x280.png`)
 - [ ] Optional: marquee promo 1400×560
 
