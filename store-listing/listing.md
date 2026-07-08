@@ -17,7 +17,7 @@ WHAT IT DOES
 • Compress photos with a quality slider, or target an exact file size ("get it under 200 KB").
 • Convert to WebP, AVIF, JPEG, PNG or PDF, and open HEIC (iPhone) and AVIF files to save them as universal formats.
 • Resize (max width, fit within W×H, exact size, or scale %) and crop to an aspect ratio (1:1, 4:3, 16:9, 9:16…).
-• Right-click any image and pick "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF".
+• Right-click any image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF" — downloads the converted file instantly, no extra window.
 • Right-click the page for "Cleanor Image Tools ▸ Convert all images / Download all images / Capture & optimize this tab".
 • Batch process: add many images at once (drag & drop, file picker, or paste) and download them all as a single .zip, or combine into one multi-page PDF.
 • Copy any result straight to your clipboard to paste into a doc or chat.
@@ -42,7 +42,7 @@ This extension has a single purpose: to compress and convert image files locally
 - **`activeTab`** — granted only at the moment the user invokes a page action (context menu or shortcut). Lets the extension read the current tab so it can list the images on that page ("Convert/Download all images") or capture a screenshot of it. No standing access to any site.
 - **`scripting`** — used with `activeTab` to run a tiny one-off script in the current page that collects the URLs of images already displayed on it. It reads nothing else and runs only on user action.
 - **`clipboardWrite`** — used only when the user clicks "Copy" on a converted image, to place that image on the clipboard. Nothing is written to the clipboard without an explicit click.
-- **`optional_host_permissions: <all_urls>`** — NOT granted at install. Only when the user uses the right-click entry and then allows it does the extension request access to that **single site's** origin, solely to download that one image's bytes so it can be re-encoded locally. The user can decline; drag-and-drop needs no permission at all.
+- **`optional_host_permissions: <all_urls>`** — NOT granted at install. Requested only under a user gesture: when the user picks a right-click "Save as", the extension asks for access to that **single site's** origin so it can fetch that one image's bytes and re-encode them locally (no window needed). Users who want one-click saving everywhere can opt in to all-sites access from a checkbox in the popup; both are optional and revocable. Drag-and-drop needs no host access at all.
 - **WebAssembly (`wasm-unsafe-eval` in CSP)** — used only to encode AVIF and to decode HEIC/HEIF, which the browser's Canvas cannot do natively. Both WASM codecs ship inside the extension; they make no network calls.
 - No tabs, cookies, browsing data, history, or analytics are accessed. All image processing happens on-device.
 
@@ -64,7 +64,7 @@ This extension has a single purpose: to compress and convert image files locally
 
 1. Register once at the Chrome Web Store Developer Dashboard (one-time $5 fee): https://chrome.google.com/webstore/devconsole
 2. Build the upload zip from the repo root:
-   `zip -r -X cleanor-image-extension.zip manifest.json background.js popup.html popup.css app.js icons vendor -x '*.DS_Store'`
+   `zip -r -X cleanor-image-extension.zip manifest.json background.js convert-core.js popup.html popup.css app.js icons vendor -x '*.DS_Store'`
 3. **New item → Upload** the zip.
 4. Fill Store listing (copy above), Privacy (disclosures above), and add the screenshot + promo tile.
 5. **Submit for review.** With no permissions and no data collection, review is typically 1–3 days.

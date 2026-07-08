@@ -9,7 +9,7 @@ const els = {
   targetSize: $('targetSize'), tsHint: $('tsHint'), targetField: $('targetField'),
   resizeMode: $('resizeMode'), resizeW: $('resizeW'), resizeH: $('resizeH'), resizePct: $('resizePct'),
   rsInputs: $('rsInputs'), rsX: $('rsX'), rsPresets: $('rsPresets'), cropAspect: $('cropAspect'),
-  subfolder: $('subfolder'),
+  subfolder: $('subfolder'), allSites: $('allSites'), allSitesRow: $('allSitesRow'),
   results: $('results'), list: $('list'), summary: $('summary'),
   downloadAll: $('downloadAll'), clear: $('clear'), expand: $('expand'),
   rowTpl: $('rowTpl'),
@@ -441,6 +441,19 @@ els.rsPresets.addEventListener('click', (e) => {
   els.resizeW.value = b.dataset.w; syncControls(); persist(); processAll();
 });
 if (els.subfolder) els.subfolder.addEventListener('change', persist);
+
+// "Instant right-click save on all sites" — grants/removes the optional <all_urls> host
+// permission so context-menu "Save as" can convert & download without opening this page.
+if (els.allSites && typeof chrome !== 'undefined' && chrome.permissions) {
+  els.allSitesRow.hidden = false;
+  chrome.permissions.contains({ origins: ['<all_urls>'] }).then((has) => { els.allSites.checked = !!has; }).catch(() => {});
+  els.allSites.addEventListener('change', async () => {
+    try {
+      if (els.allSites.checked) { const ok = await chrome.permissions.request({ origins: ['<all_urls>'] }); els.allSites.checked = !!ok; }
+      else { await chrome.permissions.remove({ origins: ['<all_urls>'] }); }
+    } catch { els.allSites.checked = await chrome.permissions.contains({ origins: ['<all_urls>'] }).catch(() => false); }
+  });
+}
 
 els.downloadAll.addEventListener('click', saveAll);
 els.clear.addEventListener('click', clearAll);

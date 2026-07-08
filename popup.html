@@ -108,11 +108,17 @@
       </details>
 
       <section class="opts" aria-label="Options">
-        <label class="opt">
-          <input id="subfolder" type="checkbox" checked />
-          <span>Save to <b>Downloads/Cleanor</b></span>
+        <div class="opts-line">
+          <label class="opt">
+            <input id="subfolder" type="checkbox" checked />
+            <span>Save to <b>Downloads/Cleanor</b></span>
+          </label>
+          <span class="opt-note" title="Re-encoding removes EXIF, GPS and camera metadata from every file">🔒 EXIF &amp; GPS removed</span>
+        </div>
+        <label class="opt" id="allSitesRow" hidden>
+          <input id="allSites" type="checkbox" />
+          <span>Right-click <b>Save as</b> downloads instantly on all sites</span>
         </label>
-        <span class="opt-note" title="Re-encoding removes EXIF, GPS and camera metadata from every file">🔒 EXIF &amp; GPS removed</span>
       </section>
 
       <section id="results" class="results" hidden>

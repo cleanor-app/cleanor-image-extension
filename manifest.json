@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cleanor Image Optimizer: Compress & Convert",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Compress and convert images (incl. HEIC & AVIF) right in your browser. Private by design: your files never leave the device.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -23,14 +23,26 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["contextMenus", "downloads", "storage", "scripting", "activeTab", "clipboardWrite"],
+  "permissions": [
+    "contextMenus",
+    "downloads",
+    "storage",
+    "scripting",
+    "activeTab",
+    "clipboardWrite"
+  ],
   "commands": {
     "open-optimizer": {
-      "suggested_key": { "default": "Alt+Shift+C", "mac": "Alt+Shift+C" },
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
       "description": "Open the Cleanor image optimizer"
     }
   },
-  "optional_host_permissions": ["<all_urls>"],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
