@@ -19,6 +19,7 @@ const CAP_FULL = 'cleanor-cap-full';
 const CAP_REGION = 'cleanor-cap-region';
 
 const MIME = { webp: 'image/webp', avif: 'image/avif', jpeg: 'image/jpeg', png: 'image/png' };
+const MIME_TYPES = new Set(['image/webp', 'image/avif', 'image/jpeg', 'image/png']);
 const FORMATS = [
   ['webp', 'WebP (smallest)'],
   ['avif', 'AVIF (best compression)'],
@@ -62,15 +63,20 @@ function collectImagesInPage() {
 }
 function prepareFullPage() {
   const de = document.documentElement, body = document.body;
-  const totalHeight = Math.min(30000, Math.max(de.scrollHeight, body ? body.scrollHeight : 0, de.offsetHeight));
-  const prev = { x: window.scrollX, y: window.scrollY, behavior: de.style.scrollBehavior };
-  de.style.scrollBehavior = 'auto';
+  const totalHeight = Math.max(de.scrollHeight, body ? body.scrollHeight : 0, de.offsetHeight);
+  const prev = { x: window.scrollX, y: window.scrollY };
+  // Force instant scrolling for the whole capture (beats CSS `scroll-behavior:smooth`,
+  // which would make window.scrollTo animate and report a stale scrollY).
+  const style = document.createElement('style');
+  style.setAttribute('data-cleanor', '');
+  style.textContent = '*{scroll-behavior:auto !important}';
+  de.appendChild(style);
   const hidden = [];
   document.querySelectorAll('*').forEach((el) => {
     const s = getComputedStyle(el);
     if ((s.position === 'fixed' || s.position === 'sticky') && el.offsetHeight > 0) { hidden.push([el, el.style.visibility]); el.style.visibility = 'hidden'; }
   });
-  window.__cleanorRestore = () => { hidden.forEach(([el, v]) => { el.style.visibility = v; }); de.style.scrollBehavior = prev.behavior; window.scrollTo(prev.x, prev.y); };
+  window.__cleanorRestore = () => { hidden.forEach(([el, v]) => { el.style.visibility = v; }); style.remove(); window.scrollTo(prev.x, prev.y); };
   return { totalHeight, viewportHeight: window.innerHeight, viewportWidth: window.innerWidth, dpr: window.devicePixelRatio || 1 };
 }
 function selectRegionInPage() {
@@ -171,15 +177,86 @@ async function directSave(srcUrl, fmt) {
   flashBadge(1);
 }
 
-// ---- page images ------------------------------------------------------------
-async function downloadAllOnPage(tabId) {
-  const urls = (await collectUrls(tabId)).slice(0, 100);
-  let n = 0;
-  for (const u of urls) {
-    if (u.startsWith('data:') && u.length > 3_000_000) continue;
-    try { chrome.downloads.download({ url: u, filename: 'Cleanor/' + safeName(u, n), saveAs: false }); n++; } catch {}
+// ---- minimal STORE zip (no lib; images are already compressed) --------------
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const parts = [], central = []; let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const lh = new Uint8Array(30 + name.length), dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true);
+    dv.setUint32(14, crc, true); dv.setUint32(18, size, true); dv.setUint32(22, size, true); dv.setUint16(26, name.length, true);
+    lh.set(name, 30); parts.push(lh, f.data);
+    const cd = new Uint8Array(46 + name.length), cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true);
+    cv.setUint32(16, crc, true); cv.setUint32(20, size, true); cv.setUint32(24, size, true); cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true);
+    cd.set(name, 46); central.push(cd); offset += lh.length + size;
   }
+  const cSize = central.reduce((a, c) => a + c.length, 0);
+  const end = new Uint8Array(22), ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true); ev.setUint32(12, cSize, true); ev.setUint32(16, offset, true);
+  const all = [...parts, ...central, end], total = all.reduce((a, c) => a + c.length, 0);
+  const out = new Uint8Array(total); let p = 0; for (const c of all) { out.set(c, p); p += c.length; }
+  return out;
+}
+function uniqueName(used, base) {
+  let n = base, i = 1;
+  while (used.has(n)) { const d = base.lastIndexOf('.'); n = d > 0 ? base.slice(0, d) + '-' + i + base.slice(d) : base + '-' + i; i++; }
+  used.add(n); return n;
+}
+async function fetchEach(urls, worker, concurrency = 6) {
+  let idx = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrency, urls.length || 1) }, async () => {
+    while (idx < urls.length) { const i = idx++; try { await worker(urls[i], i); } catch {} }
+  }));
+}
+async function downloadZip(files, name) {
+  const p = await getPrefs();
+  const dataUrl = 'data:application/zip;base64,' + toBase64(makeZip(files).buffer);
+  await chrome.downloads.download({ url: dataUrl, filename: (p.subfolder !== false ? 'Cleanor/' : '') + name, saveAs: false });
+  flashBadge(files.length);
+}
+
+// ---- page images ------------------------------------------------------------
+// Download every image on the page as ONE zip. Fetching needs site access (activeTab
+// covers same-origin; the "all sites" toggle covers the rest). If nothing is fetchable,
+// fall back to downloading each by URL (works cross-origin without host access).
+async function downloadAllOnPage(tabId, pageUrl) {
+  const urls = (await collectUrls(tabId)).slice(0, 100).filter((u) => !(u.startsWith('data:') && u.length > 3_000_000));
+  const files = [], used = new Set();
+  await fetchEach(urls, async (u) => {
+    const r = await fetch(u); if (!r.ok) return;
+    files.push({ name: uniqueName(used, safeName(u, files.length)), data: new Uint8Array(await r.arrayBuffer()) });
+  });
+  const total = files.reduce((a, f) => a + f.data.length, 0);
+  if (files.length && total <= 45 * 1024 * 1024) { await downloadZip(files, `${hostOf(pageUrl)}-images-${files.length}-cleanor.app.zip`); return; }
+  let n = 0; // fallback: nothing reachable, or archive too large → per-URL downloads
+  for (const u of urls) { try { chrome.downloads.download({ url: u, filename: 'Cleanor/' + safeName(u, n), saveAs: false }); n++; } catch {} }
   flashBadge(n);
+}
+
+// Convert every image on the page with the user's current settings, into ONE zip.
+async function convertAllOnPage(tabId, pageUrl) {
+  const urls = (await collectUrls(tabId)).slice(0, 100).filter((u) => !(u.startsWith('data:') && u.length > 3_000_000));
+  const p = await getPrefs();
+  let type = p.format || 'image/webp';
+  if (!MIME_TYPES.has(type)) type = 'image/webp'; // PDF/unknown → WebP for a batch
+  const opts = {
+    format: type, quality: Number(p.quality) || 80, target: Number(p.target) > 0 ? Number(p.target) * 1024 : 0,
+    resizeMode: p.resizeMode || 'off', resizeW: Number(p.resizeW) || 0, resizeH: Number(p.resizeH) || 0,
+    resizePct: Number(p.resizePct) || 100, cropAspect: p.crop || 'off',
+  };
+  const files = [], used = new Set();
+  await fetchEach(urls, async (u) => {
+    const r = await fetch(u); if (!r.ok) return;
+    const { blob, ext } = await convertBlob(await r.blob(), opts);
+    const base = (safeName(u, files.length).replace(/\.[^.]+$/, '') || 'image');
+    files.push({ name: uniqueName(used, `${base}-cleanor.app.${ext}`), data: new Uint8Array(await blob.arrayBuffer()) });
+  }, 4);
+  if (files.length) { await downloadZip(files, `${hostOf(pageUrl)}-converted-${files.length}-cleanor.app.zip`); return; }
+  await startJob({ type: 'convert-all', urls }); // nothing fetchable → optimizer page (asks for access)
 }
 
 // ---- screenshots (download directly, no window) -----------------------------
@@ -201,7 +278,7 @@ function stamp() {
 // Useful, human-readable filename: <site>-<kind>-<YYYY-MM-DD_HH-mm-ss>.<ext>
 async function downloadShot(dataUrl, kind, ext, pageUrl) {
   const p = await getPrefs();
-  const filename = (p.subfolder !== false ? 'Cleanor/' : '') + `${hostOf(pageUrl)}-${kind}-${stamp()}.${ext}`;
+  const filename = (p.subfolder !== false ? 'Cleanor/' : '') + `${hostOf(pageUrl)}-${kind}-${stamp()}-cleanor.app.${ext}`;
   await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
   flashBadge(1);
 }
@@ -213,20 +290,24 @@ async function captureVisible(tab, pageUrl) {
 async function captureFullPage(tab, pageUrl) {
   const [{ result: m }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: prepareFullPage });
   const scale = m.dpr;
-  const canvas = new OffscreenCanvas(Math.round(m.viewportWidth * scale), Math.round(m.totalHeight * scale));
+  // Cap total height so the canvas stays within safe limits (device px), for very long pages.
+  const totalHeight = Math.min(m.totalHeight, Math.floor(32000 / scale));
+  const canvas = new OffscreenCanvas(Math.round(m.viewportWidth * scale), Math.round(totalHeight * scale));
   const ctx = canvas.getContext('2d');
   let y = 0, guard = 0;
   try {
     while (guard++ < 60) {
       const [{ result: actualY }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: (yy) => { window.scrollTo(0, yy); return window.scrollY; }, args: [y] });
-      await sleep(220);
+      await sleep(240); // let the new viewport paint (and lazy content load)
       const shot = await captureTab(tab.windowId);
       const bmp = await createImageBitmap(await (await fetch(shot)).blob());
       ctx.drawImage(bmp, 0, Math.round(actualY * scale));
       bmp.close?.();
-      if (actualY + m.viewportHeight >= m.totalHeight - 1) break;
-      y = actualY + m.viewportHeight;
-      await sleep(320); // respect captureVisibleTab rate limit
+      if (actualY + m.viewportHeight >= totalHeight - 1) break;
+      const next = actualY + m.viewportHeight;
+      if (next <= y) break; // reached the bottom / can't scroll further
+      y = next;
+      await sleep(340); // respect captureVisibleTab rate limit (~2/sec)
     }
   } finally {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.__cleanorRestore && window.__cleanorRestore(); } }).catch(() => {});
@@ -264,8 +345,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
   if (!tab?.id) return;
 
-  if (id === DOWNLOAD_ALL) { downloadAllOnPage(tab.id); return; }
-  if (id === CONVERT_ALL) { const urls = await collectUrls(tab.id); await startJob({ type: 'convert-all', urls }); return; }
+  if (id === DOWNLOAD_ALL) { downloadAllOnPage(tab.id, info.pageUrl); return; }
+  if (id === CONVERT_ALL) { convertAllOnPage(tab.id, info.pageUrl); return; }
   if (id === CAP_VISIBLE) { try { await captureVisible(tab, info.pageUrl); } catch {} return; }
   if (id === CAP_FULL) { try { await captureFullPage(tab, info.pageUrl); } catch {} return; }
   if (id === CAP_REGION) { try { await captureRegion(tab, info.pageUrl); } catch {} return; }

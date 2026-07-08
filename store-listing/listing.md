@@ -23,10 +23,11 @@ RESIZE, CROP & BATCH
 • Resize by max width, fit within W×H, exact dimensions, or a percentage — with one-tap presets (4K, 1920, 1280, 800).
 • Crop to an aspect ratio: 1:1, 4:3, 3:2, 16:9 or 9:16.
 • Batch-convert a whole folder at once (drag & drop, file picker, or paste) and download everything as a single .zip — or combine images into one multi-page PDF.
+• On any page, "Convert all images" or "Download all images" hands you one .zip archive, not a pile of separate downloads.
 
 RIGHT-CLICK ANYWHERE
 • Right-click any image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF" — it downloads the converted file instantly, with no extra window.
-• Right-click the page → "Convert all images" or "Download all images" in one go.
+• Right-click the page → "Convert all images" or "Download all images" and get one .zip.
 • Copy any result to your clipboard to paste into a doc, email or chat.
 
 BUILT-IN SCREENSHOTS
