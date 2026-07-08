@@ -462,6 +462,28 @@ els.downloadAll.addEventListener('click', saveAll);
 els.clear.addEventListener('click', clearAll);
 els.expand.addEventListener('click', () => window.open(location.pathname + '?tab=1'));
 
+// "This page" quick actions — same as the right-click page menu, on the active tab.
+// Only in the toolbar popup: the full-tab view has no page to act on.
+const pageTools = $('pageTools');
+if (pageTools && !params.has('tab') && typeof chrome !== 'undefined' && chrome.tabs) {
+  pageTools.hidden = false;
+  pageTools.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const url = tab?.url || '';
+      if (!tab || /^(chrome|edge|about|chrome-extension|view-source|file):/i.test(url)) {
+        const t = btn.textContent; btn.textContent = 'Not on a web page';
+        setTimeout(() => { btn.textContent = t; }, 1500);
+        return;
+      }
+      chrome.runtime.sendMessage({ type: 'cleanor-run', action: btn.dataset.act, tabId: tab.id, windowId: tab.windowId, pageUrl: url });
+      window.close();
+    } catch {}
+  });
+}
+
 if (params.has('tab')) { document.body.classList.add('tab'); els.expand.style.display = 'none'; }
 
 // ---- context-menu entry point (?src=<imageUrl>) -----------------------------

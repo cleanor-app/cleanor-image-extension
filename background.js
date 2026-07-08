@@ -85,13 +85,23 @@ function prepareFullPage() {
     if (best) scroller = best;
   }
   window.__cleanorScroller = scroller;
-  const hidden = [];
-  document.querySelectorAll('*').forEach((el) => {
-    const s = getComputedStyle(el);
-    if ((s.position === 'fixed' || s.position === 'sticky') && el.offsetHeight > 0) { hidden.push([el, el.style.visibility]); el.style.visibility = 'hidden'; }
-  });
-  window.__cleanorRestore = () => { hidden.forEach(([el, v]) => { el.style.visibility = v; }); style.remove(); if (scroller !== 'window') try { scroller.scrollTop = 0; } catch {} window.scrollTo(prev.x, prev.y); };
+  window.__cleanorHidden = [];
+  window.__cleanorRestore = () => { (window.__cleanorHidden || []).forEach(([el, v]) => { try { el.style.visibility = v; } catch {} }); style.remove(); if (scroller !== 'window') try { scroller.scrollTop = 0; } catch {} window.scrollTo(prev.x, prev.y); };
   return { viewportHeight: window.innerHeight, viewportWidth: window.innerWidth, dpr: window.devicePixelRatio || 1 };
+}
+// Hide sticky/fixed bars so they don't repeat on every slice. Re-run each step because
+// many sites (LinkedIn) only make the header sticky AFTER the first scroll.
+function hideStickyInPage() {
+  const hidden = window.__cleanorHidden || (window.__cleanorHidden = []);
+  const seen = new Set(hidden.map((h) => h[0]));
+  const vh = window.innerHeight;
+  document.querySelectorAll('*').forEach((el) => {
+    if (seen.has(el)) return;
+    const s = getComputedStyle(el);
+    if ((s.position === 'fixed' || s.position === 'sticky') && el.offsetHeight > 0 && el.offsetHeight < vh * 0.9) {
+      hidden.push([el, el.style.visibility]); el.style.visibility = 'hidden';
+    }
+  });
 }
 function selectRegionInPage() {
   return new Promise((resolve) => {
@@ -144,6 +154,64 @@ function flashBadge(n) {
     chrome.action.setBadgeText({ text: n ? String(n) : '' });
     setTimeout(() => chrome.action.setBadgeText({ text: '' }), 4000);
   } catch {}
+}
+
+// A small on-page toast so the user sees work is happening (badge is subtle). Not used
+// while a screenshot viewport is being captured (it would end up in the shot).
+async function showToast(tabId, text) {
+  try {
+    await exec(tabId, (t) => {
+      let el = document.getElementById('__cleanor_toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '__cleanor_toast';
+        el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:2147483647;background:#1c2434;color:#fff;font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:11px 15px;border-radius:11px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:9px;pointer-events:none;';
+        const dot = document.createElement('span');
+        dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 0 rgba(245,158,11,.6);animation:__clp 1s infinite;';
+        const st = document.createElement('style'); st.textContent = '@keyframes __clp{0%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}100%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}';
+        el.appendChild(st); el.appendChild(dot);
+        const span = document.createElement('span'); span.id = '__cleanor_toast_t'; el.appendChild(span);
+        document.documentElement.appendChild(el);
+      }
+      document.getElementById('__cleanor_toast_t').textContent = 'Cleanor · ' + t;
+    }, [text]);
+  } catch {}
+}
+async function hideToast(tabId) {
+  try { await exec(tabId, () => { const el = document.getElementById('__cleanor_toast'); if (el) el.remove(); }); } catch {}
+}
+
+// Detect the real image extension (many CDN image URLs have no extension → avoid ".img").
+function extFromType(ct) {
+  const t = (ct || '').split(';')[0].trim().toLowerCase();
+  return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif', 'image/svg+xml': 'svg', 'image/bmp': 'bmp', 'image/x-icon': 'ico', 'image/vnd.microsoft.icon': 'ico', 'image/tiff': 'tiff' })[t] || '';
+}
+function extFromBytes(b) {
+  if (!b || b.length < 12) return '';
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return 'png';
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'jpg';
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return 'gif';
+  if (b[0] === 0x42 && b[1] === 0x4D) return 'bmp';
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'webp';
+  if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) { const br = String.fromCharCode(b[8], b[9], b[10], b[11]); if (/avif|avis/i.test(br)) return 'avif'; if (/hei|mif/i.test(br)) return 'heic'; }
+  // SVG only if there's an actual <svg tag near the start (not generic HTML)
+  if (b[0] === 0x3C) { const head = String.fromCharCode.apply(null, b.subarray(0, Math.min(b.length, 256))).toLowerCase(); if (head.includes('<svg')) return 'svg'; }
+  return '';
+}
+function baseFromUrl(url, i) {
+  try {
+    if (url.startsWith('data:')) return 'image-' + (i + 1);
+    const p = new URL(url).pathname;
+    return (decodeURIComponent(p.slice(p.lastIndexOf('/') + 1)) || ('image-' + (i + 1))).replace(/[\\/:*?"<>|]/g, '');
+  } catch { return 'image-' + (i + 1); }
+}
+function namedImage(url, i, contentType, bytes) {
+  const base = baseFromUrl(url, i);
+  const real = (base.match(/\.(png|jpe?g|gif|webp|avif|bmp|svg|ico|tiff?|heic|heif)$/i) || [])[0];
+  if (real) return base;
+  const ext = extFromType(contentType) || extFromBytes(bytes);
+  if (!ext) return null; // not a recognizable image → skip it
+  return base.replace(/\.[^./]+$/, '') + '.' + ext;
 }
 async function getPrefs() {
   try { const o = await chrome.storage.local.get('cleanor.prefs'); return o['cleanor.prefs'] || {}; } catch { return {}; }
@@ -243,17 +311,21 @@ async function downloadZip(files, name) {
 // fall back to downloading each by URL (works cross-origin without host access).
 async function downloadAllOnPage(tabId, pageUrl) {
   const urls = (await collectUrls(tabId)).slice(0, 100).filter((u) => !(u.startsWith('data:') && u.length > 3_000_000));
-  setBadge('…', true);
+  setBadge('…', true); await showToast(tabId, 'downloading images…');
   const files = [], used = new Set();
   await fetchEach(urls, async (u) => {
     const r = await fetch(u); if (!r.ok) return;
-    files.push({ name: uniqueName(used, safeName(u, files.length)), data: new Uint8Array(await r.arrayBuffer()) });
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    const nm = namedImage(u, files.length, r.headers.get('content-type'), bytes);
+    if (!nm) return; // skip anything that isn't a recognizable image
+    files.push({ name: uniqueName(used, nm), data: bytes });
     setBadge(files.length, true);
   });
   const total = files.reduce((a, f) => a + f.data.length, 0);
-  if (files.length && total <= 45 * 1024 * 1024) { await downloadZip(files, `${hostOf(pageUrl)}-images-${files.length}-cleanor.zip`); return; }
+  if (files.length && total <= 45 * 1024 * 1024) { await showToast(tabId, 'packing .zip…'); await downloadZip(files, `${hostOf(pageUrl)}-images-${files.length}-cleanor.zip`); await hideToast(tabId); return; }
+  await hideToast(tabId);
   let n = 0; // fallback: nothing reachable, or archive too large → per-URL downloads
-  for (const u of urls) { try { chrome.downloads.download({ url: u, filename: 'Cleanor/' + safeName(u, n), saveAs: false }); n++; } catch {} }
+  for (const u of urls) { try { chrome.downloads.download({ url: u, filename: 'Cleanor/' + baseFromUrl(u, n), saveAs: false }); n++; } catch {} }
   flashBadge(n);
 }
 
@@ -268,16 +340,17 @@ async function convertAllOnPage(tabId, pageUrl) {
     resizeMode: p.resizeMode || 'off', resizeW: Number(p.resizeW) || 0, resizeH: Number(p.resizeH) || 0,
     resizePct: Number(p.resizePct) || 100, cropAspect: p.crop || 'off',
   };
-  setBadge('…', true);
+  setBadge('…', true); await showToast(tabId, 'converting images…');
   const files = [], used = new Set();
   await fetchEach(urls, async (u) => {
     const r = await fetch(u); if (!r.ok) return;
     const { blob, ext } = await convertBlob(await r.blob(), opts);
-    const base = (safeName(u, files.length).replace(/\.[^.]+$/, '') || 'image');
+    const base = (baseFromUrl(u, files.length).replace(/\.[^./]+$/, '') || 'image');
     files.push({ name: uniqueName(used, `${base}-cleanor.app.${ext}`), data: new Uint8Array(await blob.arrayBuffer()) });
     setBadge(files.length, true);
   }, 4);
-  if (files.length) { await downloadZip(files, `${hostOf(pageUrl)}-converted-${files.length}-cleanor.zip`); return; }
+  if (files.length) { await showToast(tabId, 'packing .zip…'); await downloadZip(files, `${hostOf(pageUrl)}-converted-${files.length}-cleanor.zip`); await hideToast(tabId); return; }
+  await hideToast(tabId);
   await startJob({ type: 'convert-all', urls }); // nothing fetchable → optimizer page (asks for access)
 }
 
@@ -335,6 +408,7 @@ async function captureFullPage(tab, pageUrl) {
     for (let i = 0; i < MAX_SLICES; i++) {
       const [{ result: pos }] = await exec(tab.id, readScrollPos);
       if (firstY === null) firstY = pos.y;
+      if (i > 0) await exec(tab.id, hideStickyInPage); // sticky bars only on the first slice
       await sleep(180); // let the viewport paint
       slices.push({ y: pos.y, dataUrl: await captureTab(tab.windowId) });
       setBadge(slices.length, true);
@@ -348,6 +422,7 @@ async function captureFullPage(tab, pageUrl) {
   } finally {
     await exec(tab.id, () => { window.__cleanorRestore && window.__cleanorRestore(); }).catch(() => {});
   }
+  await showToast(tab.id, 'Saving screenshot…'); // covers the stitch/encode/download pause
   const fY = firstY == null ? 0 : firstY;
   const maxY = slices.reduce((a, s) => Math.max(a, s.y), 0);
   const totalCss = Math.min((maxY - fY) + vh, Math.floor(32000 / scale));
@@ -360,6 +435,7 @@ async function captureFullPage(tab, pageUrl) {
   }
   const { blob, ext } = await canvasToShot(canvas);
   await downloadShot(await blobToDataUrl(blob), 'full-page', ext, pageUrl);
+  await hideToast(tab.id);
 }
 async function captureRegion(tab, pageUrl) {
   const [{ result: rect }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: selectRegionInPage });
@@ -400,4 +476,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 chrome.commands.onCommand.addListener((cmd) => {
   if (cmd === 'open-optimizer') chrome.tabs.create({ url: chrome.runtime.getURL('popup.html?tab=1') });
+});
+
+// Popup "This page" buttons run the same actions as the context menu, on the active tab.
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg?.type !== 'cleanor-run' || !msg.tabId) return;
+  const tab = { id: msg.tabId, windowId: msg.windowId };
+  const url = msg.pageUrl;
+  if (msg.action === 'cap-visible') captureVisible(tab, url);
+  else if (msg.action === 'cap-full') captureFullPage(tab, url);
+  else if (msg.action === 'cap-region') captureRegion(tab, url);
+  else if (msg.action === 'convert-all') convertAllOnPage(tab.id, url);
+  else if (msg.action === 'download-all') downloadAllOnPage(tab.id, url);
 });
