@@ -30,7 +30,8 @@ RIGHT-CLICK ANYWHERE
 • Copy any result to your clipboard to paste into a doc, email or chat.
 
 BUILT-IN SCREENSHOTS
-• Capture the visible area, the full scrolling page, or a region you draw — then compress or convert the screenshot right away. No screen-recording or debugger permissions.
+• Capture the visible area, the full scrolling page (it scrolls and stitches, like a full-page grabber), or a region you draw.
+• Shots download instantly — no extra window — named by site and time, e.g. github.com-full-page-2026-07-08_16-45-03.png. No screen-recording or debugger permissions.
 
 PRIVATE BY DESIGN
 • 100% on-device. Images are processed by your browser (plus small bundled WASM codecs) and never leave your computer.

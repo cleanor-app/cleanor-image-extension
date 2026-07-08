@@ -182,12 +182,35 @@ async function downloadAllOnPage(tabId) {
   flashBadge(n);
 }
 
-// ---- screenshots ------------------------------------------------------------
-async function captureVisible(tab) {
-  const dataUrl = await captureTab(tab.windowId);
-  await startJob({ type: 'shot', dataUrl, name: 'screenshot' });
+// ---- screenshots (download directly, no window) -----------------------------
+// PNG by default; fall back to high-quality WebP if the PNG is huge (very tall pages)
+// so the data-URL download stays reliable.
+async function canvasToShot(canvas) {
+  let blob = await canvas.convertToBlob({ type: 'image/png' });
+  let ext = 'png';
+  if (blob.size > 5 * 1024 * 1024) { blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.92 }); ext = 'webp'; }
+  return { blob, ext };
 }
-async function captureFullPage(tab) {
+function hostOf(pageUrl) {
+  try { return (new URL(pageUrl).hostname.replace(/^www\./, '') || 'page').replace(/[^a-z0-9.-]/gi, ''); } catch { return 'page'; }
+}
+function stamp() {
+  const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+// Useful, human-readable filename: <site>-<kind>-<YYYY-MM-DD_HH-mm-ss>.<ext>
+async function downloadShot(dataUrl, kind, ext, pageUrl) {
+  const p = await getPrefs();
+  const filename = (p.subfolder !== false ? 'Cleanor/' : '') + `${hostOf(pageUrl)}-${kind}-${stamp()}.${ext}`;
+  await chrome.downloads.download({ url: dataUrl, filename, saveAs: false });
+  flashBadge(1);
+}
+
+async function captureVisible(tab, pageUrl) {
+  const dataUrl = await captureTab(tab.windowId); // already a PNG data URL
+  await downloadShot(dataUrl, 'visible', 'png', pageUrl);
+}
+async function captureFullPage(tab, pageUrl) {
   const [{ result: m }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: prepareFullPage });
   const scale = m.dpr;
   const canvas = new OffscreenCanvas(Math.round(m.viewportWidth * scale), Math.round(m.totalHeight * scale));
@@ -208,10 +231,10 @@ async function captureFullPage(tab) {
   } finally {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.__cleanorRestore && window.__cleanorRestore(); } }).catch(() => {});
   }
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  await startJob({ type: 'shot', dataUrl: await blobToDataUrl(blob), name: 'full-page' });
+  const { blob, ext } = await canvasToShot(canvas);
+  await downloadShot(await blobToDataUrl(blob), 'full-page', ext, pageUrl);
 }
-async function captureRegion(tab) {
+async function captureRegion(tab, pageUrl) {
   const [{ result: rect }] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: selectRegionInPage });
   if (!rect) return;
   await sleep(90); // let the overlay clear before capturing
@@ -221,8 +244,8 @@ async function captureRegion(tab) {
   const canvas = new OffscreenCanvas(Math.max(1, Math.round(rect.w * s)), Math.max(1, Math.round(rect.h * s)));
   canvas.getContext('2d').drawImage(bmp, Math.round(rect.x * s), Math.round(rect.y * s), Math.round(rect.w * s), Math.round(rect.h * s), 0, 0, canvas.width, canvas.height);
   bmp.close?.();
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  await startJob({ type: 'shot', dataUrl: await blobToDataUrl(blob), name: 'region' });
+  const { blob, ext } = await canvasToShot(canvas);
+  await downloadShot(await blobToDataUrl(blob), 'region', ext, pageUrl);
 }
 
 // ---- dispatch ---------------------------------------------------------------
@@ -243,9 +266,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
   if (id === DOWNLOAD_ALL) { downloadAllOnPage(tab.id); return; }
   if (id === CONVERT_ALL) { const urls = await collectUrls(tab.id); await startJob({ type: 'convert-all', urls }); return; }
-  if (id === CAP_VISIBLE) { try { await captureVisible(tab); } catch {} return; }
-  if (id === CAP_FULL) { try { await captureFullPage(tab); } catch {} return; }
-  if (id === CAP_REGION) { try { await captureRegion(tab); } catch {} return; }
+  if (id === CAP_VISIBLE) { try { await captureVisible(tab, info.pageUrl); } catch {} return; }
+  if (id === CAP_FULL) { try { await captureFullPage(tab, info.pageUrl); } catch {} return; }
+  if (id === CAP_REGION) { try { await captureRegion(tab, info.pageUrl); } catch {} return; }
 });
 
 chrome.commands.onCommand.addListener((cmd) => {
