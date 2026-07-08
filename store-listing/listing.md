@@ -18,7 +18,8 @@ WHAT IT DOES
 • Convert to WebP, AVIF, JPEG, PNG or PDF, and open HEIC (iPhone) and AVIF files to save them as universal formats.
 • Resize (max width, fit within W×H, exact size, or scale %) and crop to an aspect ratio (1:1, 4:3, 16:9, 9:16…).
 • Right-click any image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF" — downloads the converted file instantly, no extra window.
-• Right-click the page for "Cleanor Image Tools ▸ Convert all images / Download all images / Capture & optimize this tab".
+• Right-click the page for "Cleanor Image Tools ▸ Convert all images / Download all images".
+• Screenshots: capture the visible area, the full scrolling page, or a region you draw — then compress or convert it. No extra permissions, no debugger.
 • Batch process: add many images at once (drag & drop, file picker, or paste) and download them all as a single .zip, or combine into one multi-page PDF.
 • Copy any result straight to your clipboard to paste into a doc or chat.
 • Keyboard shortcut to open the optimizer; remembers your settings between sessions.
@@ -39,7 +40,7 @@ This extension has a single purpose: to compress and convert image files locally
 - **`contextMenus`** — adds a right-click submenu, "Convert image with Cleanor", on images so the user can send an image straight to the optimizer in a chosen format. Not a sensitive permission.
 - **`downloads`** — used only to save the converted image(s) to the user's Downloads folder (optionally a "Cleanor" subfolder) without a Save dialog per file, and to deliver batch results as a single .zip. No download history is read.
 - **`storage`** — stores only the user's own UI preferences (default output format, quality, resize, crop, save-subfolder) locally via `chrome.storage.local`, plus a short-lived hand-off of the current page's image list to the optimizer tab. No personal data; nothing is synced or sent anywhere.
-- **`activeTab`** — granted only at the moment the user invokes a page action (context menu or shortcut). Lets the extension read the current tab so it can list the images on that page ("Convert/Download all images") or capture a screenshot of it. No standing access to any site.
+- **`activeTab`** — granted only at the moment the user invokes a page action (context menu or shortcut). Lets the extension read the current tab so it can list the images on that page ("Convert/Download all images") or take a screenshot of it (visible area, full page via scroll-and-stitch, or a region the user draws). No standing access to any site, and no `debugger` permission is used for screenshots.
 - **`scripting`** — used with `activeTab` to run a tiny one-off script in the current page that collects the URLs of images already displayed on it. It reads nothing else and runs only on user action.
 - **`clipboardWrite`** — used only when the user clicks "Copy" on a converted image, to place that image on the clipboard. Nothing is written to the clipboard without an explicit click.
 - **`optional_host_permissions: <all_urls>`** — NOT granted at install. Requested only under a user gesture: when the user picks a right-click "Save as", the extension asks for access to that **single site's** origin so it can fetch that one image's bytes and re-encode them locally (no window needed). Users who want one-click saving everywhere can opt in to all-sites access from a checkbox in the popup; both are optional and revocable. Drag-and-drop needs no host access at all.

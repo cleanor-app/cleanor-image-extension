@@ -560,7 +560,7 @@ async function runJob() {
   try { ({ ['cleanor.job']: job } = await chrome.storage.local.get('cleanor.job')); await chrome.storage.local.remove('cleanor.job'); } catch {}
   if (!job) return;
   if (job.type === 'shot' && job.dataUrl) {
-    try { const blob = await (await fetch(job.dataUrl)).blob(); addFiles([new File([blob], 'screenshot.png', { type: 'image/png' })]); } catch {}
+    try { const blob = await (await fetch(job.dataUrl)).blob(); addFiles([new File([blob], `${job.name || 'screenshot'}.png`, { type: 'image/png' })]); } catch {}
   } else if (job.type === 'convert-all' && job.urls?.length) {
     showConvertAllBanner(job.urls);
   }
