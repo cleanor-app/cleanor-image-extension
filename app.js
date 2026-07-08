@@ -192,6 +192,8 @@ async function processAll() {
   els.downloadAll.disabled = true;
   const type = els.format.value;
 
+  render(); // show every row immediately (as "working…") so big batches give feedback
+
   for (const it of items) {
     if (it.outUrl) URL.revokeObjectURL(it.outUrl);
     it.blob = undefined; it.outUrl = undefined; it.error = undefined;
@@ -203,6 +205,7 @@ async function processAll() {
     } catch (e) {
       it.error = isHeic(it.file) ? 'Could not decode this HEIC image' : 'Could not read this image';
     }
+    render(); // live progress: this row flips from "working…" to its result
   }
   busy = false;
   render();

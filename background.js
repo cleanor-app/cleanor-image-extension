@@ -134,6 +134,10 @@ function safeName(url, i) {
     return n;
   } catch { return `image-${i + 1}`; }
 }
+// Amber badge = work in progress; blue = done (auto-clears).
+function setBadge(text, working) {
+  try { chrome.action.setBadgeBackgroundColor({ color: working ? '#f59e0b' : '#4576fd' }); chrome.action.setBadgeText({ text: String(text) }); } catch {}
+}
 function flashBadge(n) {
   try {
     chrome.action.setBadgeBackgroundColor({ color: '#4576fd' });
@@ -239,10 +243,12 @@ async function downloadZip(files, name) {
 // fall back to downloading each by URL (works cross-origin without host access).
 async function downloadAllOnPage(tabId, pageUrl) {
   const urls = (await collectUrls(tabId)).slice(0, 100).filter((u) => !(u.startsWith('data:') && u.length > 3_000_000));
+  setBadge('…', true);
   const files = [], used = new Set();
   await fetchEach(urls, async (u) => {
     const r = await fetch(u); if (!r.ok) return;
     files.push({ name: uniqueName(used, safeName(u, files.length)), data: new Uint8Array(await r.arrayBuffer()) });
+    setBadge(files.length, true);
   });
   const total = files.reduce((a, f) => a + f.data.length, 0);
   if (files.length && total <= 45 * 1024 * 1024) { await downloadZip(files, `${hostOf(pageUrl)}-images-${files.length}-cleanor.zip`); return; }
@@ -262,12 +268,14 @@ async function convertAllOnPage(tabId, pageUrl) {
     resizeMode: p.resizeMode || 'off', resizeW: Number(p.resizeW) || 0, resizeH: Number(p.resizeH) || 0,
     resizePct: Number(p.resizePct) || 100, cropAspect: p.crop || 'off',
   };
+  setBadge('…', true);
   const files = [], used = new Set();
   await fetchEach(urls, async (u) => {
     const r = await fetch(u); if (!r.ok) return;
     const { blob, ext } = await convertBlob(await r.blob(), opts);
     const base = (safeName(u, files.length).replace(/\.[^.]+$/, '') || 'image');
     files.push({ name: uniqueName(used, `${base}-cleanor.app.${ext}`), data: new Uint8Array(await blob.arrayBuffer()) });
+    setBadge(files.length, true);
   }, 4);
   if (files.length) { await downloadZip(files, `${hostOf(pageUrl)}-converted-${files.length}-cleanor.zip`); return; }
   await startJob({ type: 'convert-all', urls }); // nothing fetchable → optimizer page (asks for access)
@@ -317,31 +325,37 @@ function scrollTo1(yy) {
 async function captureFullPage(tab, pageUrl) {
   const [{ result: m }] = await exec(tab.id, prepareFullPage);
   const scale = m.dpr, vh = m.viewportHeight, vw = m.viewportWidth;
-  const MAX_SLICES = 20;
+  // Stop conditions: reached the bottom, couldn't scroll further, a sane height cap
+  // (infinite feeds like LinkedIn never end), or the slice cap.
+  const MAX_SLICES = 12;
+  const CAP_CSS = Math.min(Math.floor(32000 / scale), vh * MAX_SLICES);
   const slices = [];
-  let last = -1;
+  let last = -1, firstY = null;
   try {
     for (let i = 0; i < MAX_SLICES; i++) {
       const [{ result: pos }] = await exec(tab.id, readScrollPos);
-      await sleep(260); // let the viewport paint
+      if (firstY === null) firstY = pos.y;
+      await sleep(180); // let the viewport paint
       slices.push({ y: pos.y, dataUrl: await captureTab(tab.windowId) });
-      if (pos.y >= pos.max - 1) break;      // reached the bottom
-      if (pos.y <= last) break;             // couldn't advance
+      setBadge(slices.length, true);
+      if (pos.y >= pos.max - 1) break;                 // reached the bottom
+      if (pos.y <= last) break;                        // couldn't advance
+      if (pos.y - firstY >= CAP_CSS - vh) break;       // sane depth limit
       last = pos.y;
       await exec(tab.id, scrollTo1, [pos.y + vh]);
-      await sleep(450); // let lazy content load & settle
+      await sleep(340); // let lazy content load & settle (also respects the capture rate limit)
     }
   } finally {
     await exec(tab.id, () => { window.__cleanorRestore && window.__cleanorRestore(); }).catch(() => {});
   }
-  const firstY = slices.length ? slices[0].y : 0;
+  const fY = firstY == null ? 0 : firstY;
   const maxY = slices.reduce((a, s) => Math.max(a, s.y), 0);
-  const totalCss = Math.min((maxY - firstY) + vh, Math.floor(32000 / scale));
+  const totalCss = Math.min((maxY - fY) + vh, Math.floor(32000 / scale));
   const canvas = new OffscreenCanvas(Math.round(vw * scale), Math.round(totalCss * scale));
   const ctx = canvas.getContext('2d');
   for (const s of slices) {
     const bmp = await createImageBitmap(await (await fetch(s.dataUrl)).blob());
-    ctx.drawImage(bmp, 0, Math.round((s.y - firstY) * scale));
+    ctx.drawImage(bmp, 0, Math.round((s.y - fY) * scale));
     bmp.close?.();
   }
   const { blob, ext } = await canvasToShot(canvas);
