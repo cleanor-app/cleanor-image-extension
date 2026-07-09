@@ -139,11 +139,13 @@ Cleanor Image Optimizer has a single purpose: to compress, convert and capture i
 ## Assets checklist
 
 All screenshots/tiles are 24-bit PNG, no alpha (CWS requirement). Verified.
+Final store assets live in `store-listing/png/` (from the "Cleanor Chrome Store Graphics" design).
 
 - [x] Icon 128×128 (`icons/icon-128.png`) — Cleanor blue app icon
-- [x] Screenshots 1280×800 (5, brand style): `screenshot-1-hero.png`, `screenshot-2-formats.png`, `screenshot-3-rightclick.png`, `screenshot-4-controls.png`, `screenshot-5-screenshots.png`
-- [x] Small promo tile 440×280 (`store-listing/promo-440x280.png`)
-- [x] Marquee promo tile 1400×560 (`store-listing/marquee-1400x560.png`)
+- [x] Screenshots 1280×800 (5): `png/screenshot-1.png` … `png/screenshot-5.png`
+- [x] Small promo tile 440×280 (`png/small-promo-440x280.png`)
+- [x] Marquee promo tile 1400×560 (`png/marquee-1400x560.png`)
+- [x] Promo video (`promo/cleanor-promo.mp4`, 1920×1080, ~32s, ElevenLabs voiceover)
 
 ## Submission steps (updating the existing item)
 
