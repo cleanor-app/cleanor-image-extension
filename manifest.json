@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Cleanor Image Optimizer: Compress & Convert",
-  "version": "0.8.2",
-  "description": "Compress and convert images (incl. HEIC & AVIF) right in your browser. Private by design: your files never leave the device.",
+  "name": "Cleanor: Image Compressor, Converter & Screenshots",
+  "version": "0.8.3",
+  "description": "Compress & convert images (HEIC, AVIF, WebP, PDF), take screenshots, and save every image on a page. On your device, private.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

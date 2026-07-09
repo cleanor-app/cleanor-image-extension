@@ -1,18 +1,21 @@
 # Chrome Web Store — listing copy & submission checklist
 
 Everything below is ready to paste into the Chrome Web Store Developer Dashboard.
-This is an **update** to the existing item (ID `dfclfjboflnefohkjpkjnffpdoelbakk`), version **0.8.2**.
+This is an **update** to the existing item (ID `dfclfjboflnefohkjpkjnffpdoelbakk`), version **0.8.3**.
+Verified CRX Uploads is enabled → upload the signed `.crx` (see SIGNING.md / `pack-crx.sh`), not the plain zip.
 
 ## Basics
 
-- **Name:** Cleanor Image Optimizer: Compress & Convert
-- **Summary (≤132 chars):** Compress & convert images (HEIC, AVIF, WebP, PDF), screenshot pages, and grab every image on a site — all on your device.
+- **Name / Title (from manifest):** Cleanor: Image Compressor, Converter & Screenshots
+- **Summary (from manifest, ≤132):** Compress & convert images (HEIC, AVIF, WebP, PDF), take screenshots, and save every image on a page. On your device, private.
 - **Category:** Productivity (alt: Developer Tools)
 - **Language:** English
 
-### Alternate summaries (pick one; all ≤132)
-- Compress, convert & resize images, capture full-page screenshots, and save every image on a page — 100% in your browser.
-- On-device image compressor & converter (HEIC/AVIF/WebP/PDF) with full-page screenshots and one-click "save all images".
+### Alternate titles / summaries (all fit; no em dashes)
+- Title: Cleanor Image Optimizer: Compress, Convert, Capture
+- Title: Cleanor: Compress, Convert & Screenshot Images
+- Summary: Image compressor & converter (HEIC, AVIF, WebP, PDF) with full-page screenshots and one-tap save all images. 100% on-device.
+- Summary: Compress, convert & resize images, screenshot any page, and grab all its images. Runs on your device, nothing uploaded.
 
 ## Detailed description
 
