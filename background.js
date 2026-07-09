@@ -87,7 +87,16 @@ function prepareFullPage() {
   window.__cleanorScroller = scroller;
   window.__cleanorHidden = [];
   window.__cleanorRestore = () => { (window.__cleanorHidden || []).forEach(([el, v]) => { try { el.style.visibility = v; } catch {} }); style.remove(); if (scroller !== 'window') try { scroller.scrollTop = 0; } catch {} window.scrollTo(prev.x, prev.y); };
-  return { viewportHeight: window.innerHeight, viewportWidth: window.innerWidth, dpr: window.devicePixelRatio || 1 };
+  // For an inner scroller, capture only its content band (skip anything above it, e.g. a
+  // fixed header that would otherwise repeat on every slice). contentTop/stepH drive cropping.
+  let contentTop = 0, stepH = window.innerHeight;
+  if (scroller !== 'window') {
+    const r = scroller.getBoundingClientRect();
+    contentTop = Math.max(0, Math.round(r.top));
+    stepH = Math.round(scroller.clientHeight);
+  }
+  if (!stepH || stepH < 100) { stepH = window.innerHeight; contentTop = 0; }
+  return { viewportHeight: window.innerHeight, viewportWidth: window.innerWidth, dpr: window.devicePixelRatio || 1, contentTop, stepH };
 }
 // Hide sticky/fixed bars so they don't repeat on every slice. Re-run each step because
 // many sites (LinkedIn) only make the header sticky AFTER the first scroll.
@@ -397,40 +406,44 @@ function scrollTo1(yy) {
 // lazy/infinite pages (LinkedIn etc.) that grow while scrolling are handled. Stitched after.
 async function captureFullPage(tab, pageUrl) {
   const [{ result: m }] = await exec(tab.id, prepareFullPage);
-  const scale = m.dpr, vh = m.viewportHeight, vw = m.viewportWidth;
-  // Stop conditions: reached the bottom, couldn't scroll further, a sane height cap
-  // (infinite feeds like LinkedIn never end), or the slice cap.
-  const MAX_SLICES = 12;
-  const CAP_CSS = Math.min(Math.floor(32000 / scale), vh * MAX_SLICES);
+  const scale = m.dpr, ih = m.viewportHeight, vw = m.viewportWidth;
+  const contentTop = m.contentTop || 0;
+  const stepH = (m.stepH && m.stepH > 100) ? m.stepH : ih;
+  const vwDev = Math.round(vw * scale);
+  const CAP_DEV = 32000; // device px height cap (infinite feeds never end)
+  const MAX_SLICES = 14;
+  // Each slice: full viewport for the first (header shown once), then only the scroller's
+  // content band (crop out a fixed header above an inner scroller so it doesn't repeat).
   const slices = [];
-  let last = -1, firstY = null;
+  let dyAcc = 0, last = -1;
   try {
     for (let i = 0; i < MAX_SLICES; i++) {
       const [{ result: pos }] = await exec(tab.id, readScrollPos);
-      if (firstY === null) firstY = pos.y;
-      if (i > 0) await exec(tab.id, hideStickyInPage); // sticky bars only on the first slice
+      if (i > 0) await exec(tab.id, hideStickyInPage); // also drop window-sticky bars
       await sleep(180); // let the viewport paint
-      slices.push({ y: pos.y, dataUrl: await captureTab(tab.windowId) });
+      const dataUrl = await captureTab(tab.windowId);
+      const sy = i === 0 ? 0 : Math.round(contentTop * scale);
+      const sh = i === 0 ? Math.round(ih * scale) : Math.round(stepH * scale);
+      slices.push({ dataUrl, sy, sh, dy: dyAcc });
+      dyAcc += sh;
       setBadge(slices.length, true);
-      if (pos.y >= pos.max - 1) break;                 // reached the bottom
-      if (pos.y <= last) break;                        // couldn't advance
-      if (pos.y - firstY >= CAP_CSS - vh) break;       // sane depth limit
+      if (pos.y >= pos.max - 1) break;   // reached the bottom
+      if (pos.y <= last) break;          // couldn't advance
+      if (dyAcc >= CAP_DEV) break;       // sane depth limit
       last = pos.y;
-      await exec(tab.id, scrollTo1, [pos.y + vh]);
+      await exec(tab.id, scrollTo1, [pos.y + stepH]);
       await sleep(340); // let lazy content load & settle (also respects the capture rate limit)
     }
   } finally {
     await exec(tab.id, () => { window.__cleanorRestore && window.__cleanorRestore(); }).catch(() => {});
   }
   await showToast(tab.id, 'Saving screenshot…'); // covers the stitch/encode/download pause
-  const fY = firstY == null ? 0 : firstY;
-  const maxY = slices.reduce((a, s) => Math.max(a, s.y), 0);
-  const totalCss = Math.min((maxY - fY) + vh, Math.floor(32000 / scale));
-  const canvas = new OffscreenCanvas(Math.round(vw * scale), Math.round(totalCss * scale));
+  const totalDev = Math.min(dyAcc, CAP_DEV);
+  const canvas = new OffscreenCanvas(vwDev, totalDev);
   const ctx = canvas.getContext('2d');
   for (const s of slices) {
     const bmp = await createImageBitmap(await (await fetch(s.dataUrl)).blob());
-    ctx.drawImage(bmp, 0, Math.round((s.y - fY) * scale));
+    ctx.drawImage(bmp, 0, s.sy, vwDev, s.sh, 0, s.dy, vwDev, s.sh);
     bmp.close?.();
   }
   const { blob, ext } = await canvasToShot(canvas);
