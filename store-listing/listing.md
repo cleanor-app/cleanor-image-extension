@@ -19,44 +19,57 @@ Verified CRX Uploads is enabled → upload the signed `.crx` (see SIGNING.md / `
 
 ## Detailed description
 
-Cleanor Image Optimizer is a fast, private image toolkit that lives in your toolbar. Compress and convert pictures, resize and crop them, grab screenshots, and save every image on a page — all processed inside your browser. Nothing is ever uploaded: no account, no servers, no tracking. Great for faster websites, smaller email attachments, iPhone HEIC photos, and anyone handling sensitive or client images.
+Cleanor is a fast, private image toolkit that lives in your browser toolbar. Compress and convert your pictures, resize and crop them, capture screenshots, and save every image on a page, all without uploading a single file. There is no account, no server, and no tracking: your images are processed on your own device and never leave your computer.
 
-COMPRESS & CONVERT
-• Shrink images up to 90% with a quality slider — or set an exact target like "under 200 KB" and Cleanor finds the best quality automatically.
-• Convert to WebP, AVIF, JPEG, PNG or PDF.
-• Open HEIC (iPhone) and AVIF photos and save them as universal WebP, JPEG or PNG.
-• See exactly how much you saved on every image.
+Whether you are speeding up a website, shrinking a photo to fit an email limit, turning iPhone HEIC pictures into JPG, or grabbing a full page screenshot, Cleanor gets it done in a couple of clicks.
 
-RESIZE, CROP & BATCH
-• Resize by max width, fit within W×H, exact size, or percentage — with one-tap presets (4K, 1920, 1280, 800).
-• Crop to an aspect ratio: 1:1, 4:3, 3:2, 16:9 or 9:16.
-• Drop, paste or pick many images at once and download them all as a single .zip — or combine them into one multi-page PDF.
+WHAT YOU CAN DO
 
-RIGHT-CLICK ANY IMAGE
-• Right-click an image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF". It converts and downloads instantly, with no extra window.
-• Copy any result to your clipboard to paste into a doc, email or chat.
+Compress images
+Reduce image file size by up to 90% with a simple quality slider, or set an exact target like "under 200 KB" and let Cleanor find the best quality for you automatically. Every result shows exactly how much you saved, so you can compress images with confidence.
 
-WHOLE-PAGE TOOLS
-• "Download all images on this page" and "Convert all images on this page" hand you one clean .zip — not a pile of separate downloads.
-• Files are named correctly by type even when the site's image URLs have no extension.
+Convert between formats
+Convert images to WebP, AVIF, JPEG, PNG, or PDF. Open HEIC (iPhone) and AVIF photos and save them as universal WebP, JPEG, or PNG that opens anywhere. It doubles as a reliable HEIC to JPG converter and a WebP converter that runs completely offline.
 
-BUILT-IN SCREENSHOTS
-• Capture the visible area, the full scrolling page (it scrolls and stitches, like a full-page grabber), or a region you draw.
-• Repeating headers are kept to the top only, so full-page shots look clean.
-• Shots download instantly, named by site and time, e.g. linkedin.com-full-page-2026-07-09_16-45-03-cleanor.app.jpg. No screen-recording or debugger permissions.
+Resize and crop
+Resize by maximum width, fit within set dimensions, an exact width by height, or a percentage, with one tap presets (4K, 1920, 1280, 800). Crop to a fixed aspect ratio such as 1:1, 4:3, 3:2, 16:9, or 9:16 for avatars, thumbnails, and social posts.
 
-FAST & CONVENIENT
-• Open the toolbar popup to compress files, or use its "This page" buttons to screenshot / grab images from the current tab.
-• A keyboard shortcut opens the optimizer; your format, quality, resize and crop settings are remembered.
+Batch process
+Add many images at once by drag and drop, the file picker, or paste from the clipboard, then download them all as a single ZIP archive, or combine them into one multi page PDF.
 
-PRIVATE BY DESIGN
-• 100% on-device. Images are processed by your browser (plus small bundled WASM codecs) and never leave your computer.
-• EXIF, GPS and camera metadata are stripped automatically on every conversion.
-• No account, no ads, no tracking. Works offline.
+Right click any image
+Right click a picture on any web page and choose "Convert image with Cleanor", then pick WebP, AVIF, JPEG, PNG, or PDF. The converted file downloads instantly with no extra window. You can also copy any result straight to your clipboard to paste it into a document, email, or chat.
 
-Cleanor requests no access to your websites at install time. Optional, revocable site access is asked for only when you use a right-click or page action; otherwise just drag & drop.
+Save every image on a page
+Right click a page and choose "Download all images" to grab them as one tidy ZIP, or "Convert all images" to compress an entire page into a single archive. Files are named correctly by type, even when the site's image links have no file extension.
 
-Prefer the web, or need more tools? Visit cleanor.app/tools — the same privacy-first toolkit in your browser.
+Built in screenshots
+Capture the visible area, the full scrolling page (Cleanor scrolls and stitches it for you, like a dedicated full page screenshot tool), or a region you draw with your mouse. Screenshots download instantly, named by site and time, with no screen recording and no debugger permissions.
+
+WHY CHOOSE CLEANOR
+
+100% on device
+Your images are processed by your browser plus small bundled offline codecs. Nothing is uploaded, which makes Cleanor ideal for private, confidential, or client work. EXIF, GPS, and camera metadata are stripped automatically on every conversion.
+
+Private by default
+Cleanor asks for no access to your websites when you install it. Optional, revocable access is requested only when you use a right click or page action, and you can always just drag and drop instead.
+
+Fast and free
+No sign in, no ads, no tracking. It works offline and remembers your preferred format, quality, resize, and crop settings between sessions. There is even a keyboard shortcut to open the optimizer instantly.
+
+WHO IT IS FOR
+
+Web developers and site owners who want smaller WebP and AVIF images for faster page loads and better Core Web Vitals.
+Bloggers, writers, and marketers who need quick screenshots and lighter images.
+iPhone users converting HEIC photos to JPG or PNG for sharing.
+Designers and social media managers cropping to 1:1, 16:9, and 9:16.
+Anyone emailing or uploading photos that must stay under a size limit.
+
+HOW IT WORKS
+
+Open Cleanor from the toolbar and drop in your images, or right click any picture on the web. Everything runs locally in your browser using its own image encoder plus small bundled WebAssembly codecs for AVIF and HEIC. Your files never touch a server, so your photos stay yours.
+
+Prefer to work on the web, or need more tools? Visit cleanor.app/tools, the same privacy first toolkit, right in your browser.
 
 ## Single-purpose statement (required)
 
