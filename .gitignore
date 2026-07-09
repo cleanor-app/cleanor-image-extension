@@ -5,3 +5,6 @@ node_modules/
 # signing keys / packaged CRX — never commit
 *.pem
 *.crx
+
+# design source exports (kept locally, not committed)
+store-listing/*.zip
