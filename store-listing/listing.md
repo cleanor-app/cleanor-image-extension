@@ -69,6 +69,48 @@ HOW IT WORKS
 
 Open Cleanor from the toolbar and drop in your images, or right click any picture on the web. Everything runs locally in your browser using its own image encoder plus small bundled WebAssembly codecs for AVIF and HEIC. Your files never touch a server, so your photos stay yours.
 
+EXAMPLE WORKFLOWS
+
+Make a photo small enough to email. Drop the picture in, set a target of "under 200 KB", and download the compressed copy that fits the limit.
+
+Convert an iPhone photo. Right click a HEIC image on any page and save it as JPG in a single click, ready to share on any device.
+
+Prepare images for your website. Batch convert a whole folder to WebP or AVIF and download them all as one ZIP, so your pages load faster and score better on Core Web Vitals.
+
+Build a PDF from photos. Select several images and combine them into one multi page PDF to send or archive.
+
+Capture a full article. Right click the page and take a full page screenshot that scrolls and stitches automatically, then compress it before you share it.
+
+Collect every image from a page. Right click and choose "Download all images" to get a single, tidy ZIP instead of dozens of separate downloads.
+
+Crop a profile picture. Load an image, crop it to 1:1, resize to a preset, and export in seconds.
+
+COMMON QUESTIONS
+
+Are my images uploaded anywhere?
+No. Every image is processed on your own device inside your browser. Nothing is ever sent to a server.
+
+Is Cleanor free?
+Yes. There is no sign in, no subscription, and no ads.
+
+Does it work offline?
+Yes. Once installed, compression, conversion, resizing, cropping, and screenshots all work without an internet connection.
+
+Can it convert iPhone HEIC photos?
+Yes. Open HEIC or HEIF files and save them as JPG, PNG, or WebP that opens on any device.
+
+What formats can it export?
+WebP, AVIF, JPEG, PNG, and PDF. You can also combine several images into one multi page PDF.
+
+Will converting reduce quality?
+You stay in control. Use the quality slider, choose an exact target file size, or pick PNG for lossless output.
+
+Does it remove metadata?
+Yes. EXIF, GPS, and camera metadata are stripped automatically when an image is re encoded, which is better for your privacy.
+
+Why does it ask for site access sometimes?
+Only when you use a right click or page action that needs to read the image bytes, and only for that action. You can decline and simply drag and drop your files instead.
+
 Prefer to work on the web, or need more tools? Visit cleanor.app/tools, the same privacy first toolkit, right in your browser.
 
 ## Single-purpose statement (required)
@@ -96,10 +138,12 @@ Cleanor Image Optimizer has a single purpose: to compress, convert and capture i
 
 ## Assets checklist
 
+All screenshots/tiles are 24-bit PNG, no alpha (CWS requirement). Verified.
+
 - [x] Icon 128×128 (`icons/icon-128.png`) — Cleanor blue app icon
 - [x] Screenshots 1280×800 (5, brand style): `screenshot-1-hero.png`, `screenshot-2-formats.png`, `screenshot-3-rightclick.png`, `screenshot-4-controls.png`, `screenshot-5-screenshots.png`
 - [x] Small promo tile 440×280 (`store-listing/promo-440x280.png`)
-- [ ] Optional: marquee promo 1400×560
+- [x] Marquee promo tile 1400×560 (`store-listing/marquee-1400x560.png`)
 
 ## Submission steps (updating the existing item)
 
