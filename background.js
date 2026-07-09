@@ -174,15 +174,16 @@ async function showToast(tabId, text) {
       if (!el) {
         el = document.createElement('div');
         el.id = '__cleanor_toast';
-        el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:2147483647;background:#1c2434;color:#fff;font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:11px 15px;border-radius:11px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:9px;pointer-events:none;';
-        const dot = document.createElement('span');
-        dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 0 rgba(245,158,11,.6);animation:__clp 1s infinite;';
-        const st = document.createElement('style'); st.textContent = '@keyframes __clp{0%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}100%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}';
-        el.appendChild(st); el.appendChild(dot);
-        const span = document.createElement('span'); span.id = '__cleanor_toast_t'; el.appendChild(span);
+        el.style.cssText = 'position:fixed;top:20px;right:20px;z-index:2147483647;background:#141a2b;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 22px;border-radius:15px;border:1.5px solid #4576fd;box-shadow:0 16px 44px rgba(10,20,60,.5),0 0 0 4px rgba(69,118,253,.12);display:flex;align-items:center;gap:14px;pointer-events:none;';
+        const sp = document.createElement('span');
+        sp.style.cssText = 'width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.22);border-top-color:#7ea0ff;animation:__clspin .7s linear infinite;flex-shrink:0;';
+        const st = document.createElement('style'); st.textContent = '@keyframes __clspin{to{transform:rotate(360deg)}}';
+        el.appendChild(st); el.appendChild(sp);
+        const span = document.createElement('span'); span.id = '__cleanor_toast_t'; span.style.cssText = 'font-size:16px;font-weight:650;letter-spacing:.2px;white-space:nowrap;';
+        el.appendChild(span);
         document.documentElement.appendChild(el);
       }
-      document.getElementById('__cleanor_toast_t').textContent = 'Cleanor · ' + t;
+      document.getElementById('__cleanor_toast_t').innerHTML = '<span style="color:#8fa8ff;font-weight:800">Cleanor</span>&nbsp;·&nbsp;' + String(t).replace(/[<>]/g, '');
     }, [text]);
   } catch {}
 }
@@ -364,13 +365,14 @@ async function convertAllOnPage(tabId, pageUrl) {
 }
 
 // ---- screenshots (download directly, no window) -----------------------------
-// PNG by default; fall back to high-quality WebP if the PNG is huge (very tall pages)
-// so the data-URL download stays reliable.
+// Small shots (visible area / region) → PNG (lossless, small anyway). Large shots (full
+// page) → JPEG: a many-megapixel PNG is a 10-20 MB blob whose base64 data-URL makes
+// chrome.downloads hang; JPEG encodes in ~100 ms and downloads instantly.
 async function canvasToShot(canvas) {
-  let blob = await canvas.convertToBlob({ type: 'image/png' });
-  let ext = 'png';
-  if (blob.size > 5 * 1024 * 1024) { blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.92 }); ext = 'webp'; }
-  return { blob, ext };
+  if (canvas.width * canvas.height > 2_500_000) {
+    return { blob: await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.92 }), ext: 'jpg' };
+  }
+  return { blob: await canvas.convertToBlob({ type: 'image/png' }), ext: 'png' };
 }
 function hostOf(pageUrl) {
   try { return (new URL(pageUrl).hostname.replace(/^www\./, '') || 'page').replace(/[^a-z0-9.-]/gi, ''); } catch { return 'page'; }
@@ -441,6 +443,7 @@ async function captureFullPage(tab, pageUrl) {
   const totalDev = Math.min(dyAcc, CAP_DEV);
   const canvas = new OffscreenCanvas(vwDev, totalDev);
   const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, vwDev, totalDev); // opaque bg for JPEG
   for (const s of slices) {
     const bmp = await createImageBitmap(await (await fetch(s.dataUrl)).blob());
     ctx.drawImage(bmp, 0, s.sy, vwDev, s.sh, 0, s.dy, vwDev, s.sh);
