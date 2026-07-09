@@ -1,3 +1,7 @@
 *.zip
 .DS_Store
 node_modules/
+
+# signing keys / packaged CRX — never commit
+*.pem
+*.crx
