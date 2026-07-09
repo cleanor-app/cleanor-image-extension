@@ -1,68 +1,80 @@
 # Chrome Web Store — listing copy & submission checklist
 
 Everything below is ready to paste into the Chrome Web Store Developer Dashboard.
+This is an **update** to the existing item (ID `dfclfjboflnefohkjpkjnffpdoelbakk`), version **0.8.2**.
 
 ## Basics
 
 - **Name:** Cleanor Image Optimizer: Compress & Convert
-- **Summary (≤132 chars):** Compress and convert images (incl. HEIC & AVIF) right in your browser. Private by design: your files never leave the device.
+- **Summary (≤132 chars):** Compress & convert images (HEIC, AVIF, WebP, PDF), screenshot pages, and grab every image on a site — all on your device.
 - **Category:** Productivity (alt: Developer Tools)
 - **Language:** English
 
+### Alternate summaries (pick one; all ≤132)
+- Compress, convert & resize images, capture full-page screenshots, and save every image on a page — 100% in your browser.
+- On-device image compressor & converter (HEIC/AVIF/WebP/PDF) with full-page screenshots and one-click "save all images".
+
 ## Detailed description
 
-Compress and convert images without ever uploading them. Cleanor Image Optimizer shrinks your pictures and converts them between modern formats entirely inside your browser — no account, no servers, no tracking. Perfect for faster websites, smaller email attachments, iPhone HEIC photos, and anyone who works with sensitive or client images.
+Cleanor Image Optimizer is a fast, private image toolkit that lives in your toolbar. Compress and convert pictures, resize and crop them, grab screenshots, and save every image on a page — all processed inside your browser. Nothing is ever uploaded: no account, no servers, no tracking. Great for faster websites, smaller email attachments, iPhone HEIC photos, and anyone handling sensitive or client images.
 
 COMPRESS & CONVERT
-• Shrink images up to 90% with a quality slider — or set an exact target like "under 200 KB" and let Cleanor find the best quality automatically.
+• Shrink images up to 90% with a quality slider — or set an exact target like "under 200 KB" and Cleanor finds the best quality automatically.
 • Convert to WebP, AVIF, JPEG, PNG or PDF.
 • Open HEIC (iPhone) and AVIF photos and save them as universal WebP, JPEG or PNG.
 • See exactly how much you saved on every image.
 
 RESIZE, CROP & BATCH
-• Resize by max width, fit within W×H, exact dimensions, or a percentage — with one-tap presets (4K, 1920, 1280, 800).
+• Resize by max width, fit within W×H, exact size, or percentage — with one-tap presets (4K, 1920, 1280, 800).
 • Crop to an aspect ratio: 1:1, 4:3, 3:2, 16:9 or 9:16.
-• Batch-convert a whole folder at once (drag & drop, file picker, or paste) and download everything as a single .zip — or combine images into one multi-page PDF.
-• On any page, "Convert all images" or "Download all images" hands you one .zip archive, not a pile of separate downloads.
+• Drop, paste or pick many images at once and download them all as a single .zip — or combine them into one multi-page PDF.
 
-RIGHT-CLICK ANYWHERE
-• Right-click any image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF" — it downloads the converted file instantly, with no extra window.
-• Right-click the page → "Convert all images" or "Download all images" and get one .zip.
+RIGHT-CLICK ANY IMAGE
+• Right-click an image → "Convert image with Cleanor ▸ Save as WebP / AVIF / JPEG / PNG / PDF". It converts and downloads instantly, with no extra window.
 • Copy any result to your clipboard to paste into a doc, email or chat.
+
+WHOLE-PAGE TOOLS
+• "Download all images on this page" and "Convert all images on this page" hand you one clean .zip — not a pile of separate downloads.
+• Files are named correctly by type even when the site's image URLs have no extension.
 
 BUILT-IN SCREENSHOTS
 • Capture the visible area, the full scrolling page (it scrolls and stitches, like a full-page grabber), or a region you draw.
-• Shots download instantly — no extra window — named by site and time, e.g. github.com-full-page-2026-07-08_16-45-03.png. No screen-recording or debugger permissions.
+• Repeating headers are kept to the top only, so full-page shots look clean.
+• Shots download instantly, named by site and time, e.g. linkedin.com-full-page-2026-07-09_16-45-03-cleanor.app.jpg. No screen-recording or debugger permissions.
+
+FAST & CONVENIENT
+• Open the toolbar popup to compress files, or use its "This page" buttons to screenshot / grab images from the current tab.
+• A keyboard shortcut opens the optimizer; your format, quality, resize and crop settings are remembered.
 
 PRIVATE BY DESIGN
 • 100% on-device. Images are processed by your browser (plus small bundled WASM codecs) and never leave your computer.
 • EXIF, GPS and camera metadata are stripped automatically on every conversion.
-• No account, no ads, no tracking, works offline.
+• No account, no ads, no tracking. Works offline.
 
-Cleanor asks for no access to your sites at install time. Optional one-time site access is requested only when you use a right-click action, and you can turn on instant saving everywhere from a single checkbox — or never grant it and just drag & drop.
+Cleanor requests no access to your websites at install time. Optional, revocable site access is asked for only when you use a right-click or page action; otherwise just drag & drop.
 
 Prefer the web, or need more tools? Visit cleanor.app/tools — the same privacy-first toolkit in your browser.
 
 ## Single-purpose statement (required)
 
-This extension has a single purpose: to compress and convert image files locally in the browser.
+Cleanor Image Optimizer has a single purpose: to compress, convert and capture images locally in the browser (including converting/downloading the images on the current page and taking screenshots of it), without uploading anything.
 
 ## Permissions justification
 
-- **`contextMenus`** — adds a right-click submenu, "Convert image with Cleanor", on images so the user can send an image straight to the optimizer in a chosen format. Not a sensitive permission.
-- **`downloads`** — used only to save the converted image(s) to the user's Downloads folder (optionally a "Cleanor" subfolder) without a Save dialog per file, and to deliver batch results as a single .zip. No download history is read.
-- **`storage`** — stores only the user's own UI preferences (default output format, quality, resize, crop, save-subfolder) locally via `chrome.storage.local`, plus a short-lived hand-off of the current page's image list to the optimizer tab. No personal data; nothing is synced or sent anywhere.
-- **`activeTab`** — granted only at the moment the user invokes a page action (context menu or shortcut). Lets the extension read the current tab so it can list the images on that page ("Convert/Download all images") or take a screenshot of it (visible area, full page via scroll-and-stitch, or a region the user draws). No standing access to any site, and no `debugger` permission is used for screenshots.
-- **`scripting`** — used with `activeTab` to run a tiny one-off script in the current page that collects the URLs of images already displayed on it. It reads nothing else and runs only on user action.
-- **`clipboardWrite`** — used only when the user clicks "Copy" on a converted image, to place that image on the clipboard. Nothing is written to the clipboard without an explicit click.
-- **`optional_host_permissions: <all_urls>`** — NOT granted at install. Requested only under a user gesture: when the user picks a right-click "Save as", the extension asks for access to that **single site's** origin so it can fetch that one image's bytes and re-encode them locally (no window needed). Users who want one-click saving everywhere can opt in to all-sites access from a checkbox in the popup; both are optional and revocable. Drag-and-drop needs no host access at all.
-- **WebAssembly (`wasm-unsafe-eval` in CSP)** — used only to encode AVIF and to decode HEIC/HEIF, which the browser's Canvas cannot do natively. Both WASM codecs ship inside the extension; they make no network calls.
-- No tabs, cookies, browsing data, history, or analytics are accessed. All image processing happens on-device.
+- **`contextMenus`** — adds the right-click entries: "Convert image with Cleanor" on images, and "Cleanor Image Tools" (convert/download all images, screenshots) on pages. Not a sensitive permission.
+- **`downloads`** — used only to save results to the Downloads folder (optionally a "Cleanor" subfolder) without a per-file Save dialog, and to deliver batch/whole-page results as a single .zip. No download history is read.
+- **`storage`** — stores only the user's own UI preferences (default format, quality, resize, crop, save-subfolder) via `chrome.storage.local`, plus a brief hand-off of the current page's image list to the optimizer tab. No personal data; nothing is synced or sent anywhere.
+- **`activeTab`** — granted only when the user invokes a page action (context menu, popup button or shortcut). Lets the extension read the current tab to list its images or take a screenshot of it. No standing access to any site; no `debugger` permission is used for screenshots.
+- **`scripting`** — used with `activeTab` to run small one-off scripts in the current page: collect the URLs of images already shown on it, scroll for a full-page screenshot, and draw the region-selection overlay. Runs only on user action.
+- **`clipboardWrite`** — used only when the user clicks "Copy" on a result, to place that image on the clipboard.
+- **`optional_host_permissions: <all_urls>`** — NOT granted at install. Requested only under a user gesture: a right-click "Save as", or "Convert/Download all images", needs to fetch the image bytes so they can be re-encoded/zipped locally. Access can be limited to a single site or granted for all sites via an optional popup checkbox; both are revocable. Drag-and-drop needs no host access.
+- **WebAssembly (`wasm-unsafe-eval` in CSP)** — used only to encode AVIF and decode HEIC/HEIF, which the browser's Canvas cannot do natively. Both codecs ship inside the extension and make no network calls.
+- No cookies, browsing history, or analytics are accessed. All processing happens on-device.
 
 ## Data usage disclosures (Privacy tab)
 
 - Does this item collect or use user data? **No.**
-- The following are all **unchecked / "not collected":** personally identifiable info, health info, financial info, authentication info, personal communications, location, web history, user activity, website content.
+- All categories **unchecked / "not collected":** personally identifiable info, health, financial, authentication, personal communications, location, web history, user activity, website content.
 - **Privacy policy URL:** https://cleanor.app/privacy
 - Certify compliance with the Developer Program Policies: **yes.**
 
@@ -73,11 +85,15 @@ This extension has a single purpose: to compress and convert image files locally
 - [x] Small promo tile 440×280 (`store-listing/promo-440x280.png`)
 - [ ] Optional: marquee promo 1400×560
 
-## Submission steps
+## Submission steps (updating the existing item)
 
-1. Register once at the Chrome Web Store Developer Dashboard (one-time $5 fee): https://chrome.google.com/webstore/devconsole
-2. Build the upload zip from the repo root:
+1. Rebuild the upload zip from the repo root:
    `zip -r -X cleanor-image-extension.zip manifest.json background.js convert-core.js popup.html popup.css app.js icons vendor -x '*.DS_Store'`
-3. **New item → Upload** the zip.
-4. Fill Store listing (copy above), Privacy (disclosures above), and add the screenshot + promo tile.
-5. **Submit for review.** With no permissions and no data collection, review is typically 1–3 days.
+2. Dev Dashboard → the **Cleanor Image Optimizer** item → **Package → Upload new package** → the zip (v0.8.2).
+3. **Store listing** tab → paste the Summary + Detailed description above; upload the 5 screenshots + promo tile.
+4. **Privacy practices** tab → paste the Single-purpose statement and each Permission justification; set Data usage to **No data collected**; confirm the privacy policy URL.
+5. **Submit for review.** Because this version adds `scripting`, `activeTab`, `clipboardWrite` and optional `<all_urls>`, expect a more thorough review than a no-permission build — the justifications above cover why each is needed and that nothing is uploaded. Review is typically a few days.
+
+## What's new (for your own notes — CWS has no changelog field)
+
+HEIC/AVIF input · PDF output · target file size · resize presets + crop · batch → one .zip or PDF · instant right-click "Save as" (no window) · copy to clipboard · whole-page "convert/download all images" → .zip · full-page / visible / region screenshots · popup "This page" buttons · faster saves + progress loader.
