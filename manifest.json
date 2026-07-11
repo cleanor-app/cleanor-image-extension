@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cleanor: Image Compressor, Converter & Screenshots",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Compress & convert images (HEIC, AVIF, WebP, PDF), take screenshots, and save every image on a page. On your device, private.",
   "icons": {
     "16": "icons/icon-16.png",

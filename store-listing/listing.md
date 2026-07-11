@@ -1,7 +1,7 @@
 # Chrome Web Store — listing copy & submission checklist
 
 Everything below is ready to paste into the Chrome Web Store Developer Dashboard.
-This is an **update** to the existing item (ID `dfclfjboflnefohkjpkjnffpdoelbakk`), version **0.8.3**.
+This is an **update** to the existing item (ID `dfclfjboflnefohkjpkjnffpdoelbakk`), version **0.8.4**.
 Verified CRX Uploads is enabled → upload the signed `.crx` (see SIGNING.md / `pack-crx.sh`), not the plain zip.
 
 ## Basics
@@ -151,7 +151,7 @@ Final store assets live in `store-listing/png/` (from the "Cleanor Chrome Store 
 
 1. Rebuild the upload zip from the repo root:
    `zip -r -X cleanor-image-extension.zip manifest.json background.js convert-core.js popup.html popup.css app.js icons vendor -x '*.DS_Store'`
-2. Dev Dashboard → the **Cleanor Image Optimizer** item → **Package → Upload new package** → the zip (v0.8.2).
+2. Dev Dashboard → the **Cleanor Image Optimizer** item → **Package → Upload new package** → the zip (v0.8.4).
 3. **Store listing** tab → paste the Summary + Detailed description above; upload the 5 screenshots + promo tile.
 4. **Privacy practices** tab → paste the Single-purpose statement and each Permission justification; set Data usage to **No data collected**; confirm the privacy policy URL.
 5. **Submit for review.** Because this version adds `scripting`, `activeTab`, `clipboardWrite` and optional `<all_urls>`, expect a more thorough review than a no-permission build — the justifications above cover why each is needed and that nothing is uploaded. Review is typically a few days.

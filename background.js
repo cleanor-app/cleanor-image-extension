@@ -28,6 +28,19 @@ const FORMATS = [
   ['pdf', 'PDF (document)'],
 ];
 
+const SITE = 'https://cleanor.app';
+
+// Single place for the campaign tags: without them the store-referred visits land in GA as
+// "direct" and the extension looks like it sends no traffic at all.
+function siteUrl(path, medium) {
+  const u = new URL(path, SITE);
+  u.searchParams.set('utm_source', 'chrome_extension');
+  u.searchParams.set('utm_medium', medium);
+  u.searchParams.set('utm_campaign', 'cleanor_image_optimizer');
+  u.searchParams.set('utm_content', chrome.runtime.getManifest().version);
+  return u.href;
+}
+
 function buildMenu() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({ id: IMG_PARENT, title: 'Convert image with Cleanor', contexts: ['image'] });
@@ -47,8 +60,15 @@ function buildMenu() {
   });
 }
 
-chrome.runtime.onInstalled.addListener(buildMenu);
+chrome.runtime.onInstalled.addListener((details) => {
+  buildMenu();
+  // Only on a fresh install — re-opening this on every auto-update would be spam.
+  if (details.reason === 'install') chrome.tabs.create({ url: siteUrl('/tools', 'onboarding') });
+});
 chrome.runtime.onStartup.addListener(buildMenu);
+
+// Re-registered on every service-worker wake; the call is idempotent.
+chrome.runtime.setUninstallURL(siteUrl('/support', 'uninstall'));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

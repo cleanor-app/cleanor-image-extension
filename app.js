@@ -12,6 +12,7 @@ const els = {
   subfolder: $('subfolder'), allSites: $('allSites'), allSitesRow: $('allSitesRow'),
   results: $('results'), list: $('list'), summary: $('summary'),
   downloadAll: $('downloadAll'), clear: $('clear'), expand: $('expand'),
+  resultsCta: $('resultsCta'), ctaLink: $('ctaLink'), siteLink: $('siteLink'),
   rowTpl: $('rowTpl'),
 };
 
@@ -21,6 +22,20 @@ const LOSSY = new Set(['image/webp', 'image/avif', 'image/jpeg']);
 // Brand tag appended to every optimized file's name (e.g. photo-cleanor.app.webp).
 const BRAND_TAG = 'cleanor.app';
 const SUBFOLDER = 'Cleanor';
+
+const SITE = 'https://cleanor.app';
+
+// Mirrors siteUrl() in background.js. Untagged links arrive in GA as "direct" traffic.
+function siteUrl(path, medium) {
+  const u = new URL(path, SITE);
+  u.searchParams.set('utm_source', 'chrome_extension');
+  u.searchParams.set('utm_medium', medium);
+  u.searchParams.set('utm_campaign', 'cleanor_image_optimizer');
+  const v = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
+    ? chrome.runtime.getManifest().version : '';
+  if (v) u.searchParams.set('utm_content', v);
+  return u.href;
+}
 
 const MIME = { webp: 'image/webp', avif: 'image/avif', jpeg: 'image/jpeg', jpg: 'image/jpeg', png: 'image/png', pdf: 'application/pdf' };
 const IMG_RE = /\.(jpe?g|png|gif|webp|avif|bmp|heic|heif|tiff?)$/i;
@@ -258,6 +273,8 @@ function render() {
   } else {
     els.summary.textContent = `${items.length} image${items.length > 1 ? 's' : ''}`;
   }
+  // Surfaced only once the user has a result in hand — that is when the offer is earned.
+  els.resultsCta.hidden = done === 0;
   els.downloadAll.disabled = done === 0;
   els.downloadAll.textContent = done > 1
     ? (type === 'application/pdf' ? 'Download .pdf' : 'Download .zip')
@@ -590,6 +607,9 @@ async function runJob() {
     showConvertAllBanner(job.urls);
   }
 }
+
+els.siteLink.href = siteUrl('/tools', 'popup_footer');
+els.ctaLink.href = siteUrl('/tools', 'results_cta');
 
 // Boot: restore prefs, then auto-run the context-menu conversion / page job if applicable.
 applyPrefs().then(async () => {

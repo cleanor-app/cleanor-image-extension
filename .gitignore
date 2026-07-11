@@ -8,3 +8,6 @@ node_modules/
 
 # design source exports (kept locally, not committed)
 store-listing/*.zip
+
+# firebase debug log (local junk)
+firebase-debug.log
