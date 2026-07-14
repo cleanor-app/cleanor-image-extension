@@ -27,7 +27,7 @@ echo "✓ zip:  $ROOT/cleanor-image-extension.zip"
 [[ "${1:-}" == "--zip-only" ]] && exit 0
 
 # --- 2) signed CRX -----------------------------------------------------------
-KEY="${CLEANOR_CRX_KEY:-$HOME/Developer/Web/cleanor-image-extension-signing/cleanor-image-ext.pem}"
+KEY="${CLEANOR_CRX_KEY:-$HOME/Developer/Web/Chrome/cleanor-image-extension-signing/cleanor-image-ext.pem}"
 CHROME="${CHROME_BIN:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 OUTDIR="$(dirname "$KEY")"
 

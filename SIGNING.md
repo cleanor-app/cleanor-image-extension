@@ -9,7 +9,7 @@ Docs: https://developer.chrome.com/docs/webstore/update#protect-package-updates
 
 ## Where the key lives (do NOT commit)
 
-- Private key: `~/Developer/Web/cleanor-image-extension-signing/cleanor-image-ext.pem`
+- Private key: `~/Developer/Web/Chrome/cleanor-image-extension-signing/cleanor-image-ext.pem`
   (kept **outside** this public repo; `*.pem` / `*.crx` are also gitignored as a safety net)
 - **Back it up** in a password manager / secure offline store. If lost, reverting Verified
   CRX Uploads requires contacting CWS support (~1 week).

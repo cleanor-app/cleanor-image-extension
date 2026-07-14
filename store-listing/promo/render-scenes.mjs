@@ -5,7 +5,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const CWS = '/private/tmp/claude-501/-Users-igorshenshin-Developer-Web-cleanor-web/46b00aa4-b71c-4eef-8700-31cf9efbc58d/scratchpad/cws';
 const OUT = '/private/tmp/claude-501/-Users-igorshenshin-Developer-Web-cleanor-web/46b00aa4-b71c-4eef-8700-31cf9efbc58d/scratchpad/promo';
 const BLUE = '#4576FD';
-const icon = 'data:image/png;base64,' + readFileSync('/Users/igorshenshin/Developer/Web/cleanor-image-extension/icons/icon-128.png').toString('base64');
+// Resolved relative to this file, not to an absolute home path: the repo moved once already
+// (Web/ -> Web/Chrome/) and a hardcoded path is a promise to break on the next move.
+const icon =
+  'data:image/png;base64,' +
+  readFileSync(new URL('../../icons/icon-128.png', import.meta.url)).toString('base64');
 
 const FONTLINK = `<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" rel="stylesheet">`;
 const SANS = `-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
